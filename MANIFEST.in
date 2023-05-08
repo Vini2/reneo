@@ -1,0 +1,4 @@
+include reneo/reneo.LICENSE
+include reneo/reneo.CITATION
+include reneo/reneo.VERSION
+recursive-include reneo *

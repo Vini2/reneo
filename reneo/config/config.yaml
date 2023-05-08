@@ -1,0 +1,4 @@
+# Snakemake config
+input:
+output: 'reneo.out/'
+log: 'reneo/reneo.log'
