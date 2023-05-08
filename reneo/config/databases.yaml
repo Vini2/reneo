@@ -1,0 +1,8 @@
+# Bacterial single-copy marker genes HMM file
+smg_hmm: "https://raw.githubusercontent.com/metagentools/MetaCoAG/develop/metacoag_utils/auxiliary/marker.hmm"
+smg_hmm_file: "marker.hmm"
+
+# VOG DB hmm files
+vog_db: "http://fileshare.csb.univie.ac.at/vog/latest/vog.hmm.tar.gz"
+vog_db_tar: "vog.hmm.tar.gz"
+vog_db_file: "AllVOG.hmm"

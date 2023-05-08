@@ -134,6 +134,25 @@ def run(_input, output, log, **kwargs):
     )
 
 
+# Install command
+@click.command(
+    epilog=help_msg_extra,
+    context_settings=dict(
+        help_option_names=["-h", "--help"], ignore_unknown_options=True
+    ),
+)
+@common_options
+def install(output, **kwargs):
+    """Install databases"""
+
+    # run!
+    run_snakemake(
+        # Full path to Snakefile
+        snakefile_path=snake_base(os.path.join("workflow", "install.smk")),
+        **kwargs
+    )
+
+
 @click.command()
 @common_options
 def config(configfile, **kwargs):
@@ -148,6 +167,7 @@ def citation(**kwargs):
 
 
 cli.add_command(run)
+cli.add_command(install)
 cli.add_command(config)
 cli.add_command(citation)
 
