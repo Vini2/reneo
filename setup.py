@@ -20,30 +20,16 @@ def get_description():
 
 
 def get_data_files():
-    data_files = [(".", ["README.md"])]
+    data_files = [(".", ["LICENSE", "README.md"])]
     return data_files
 
-
-CLASSIFIERS = [
-    "Environment :: Console",
-    "Environment :: MacOS X",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT license",
-    "Natural Language :: English",
-    "Operating System :: POSIX :: Linux",
-    "Operating System :: MacOS :: MacOS X",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Topic :: Scientific/Engineering :: Bio-Informatics",
-]
 
 setup(
     name="reneo",
     packages=find_packages(),
     url="https://github.com/Vini2/reneo",
-    python_requires=">=3.7",
-    description="Unraveling Viral Genomes from Metagenomes using Assembly Graphs",
+    python_requires=">=3.8,<3.11",
+    description="Unraveling Viral Genomes from Metagenomes",
     long_description=get_description(),
     long_description_content_type="text/markdown",
     version=get_version(),
@@ -62,4 +48,12 @@ setup(
         ]
     },
     include_package_data=True,
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Natural Language :: English",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+        "Operating System :: OS Independent",
+    ],
 )

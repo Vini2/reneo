@@ -84,7 +84,8 @@ def common_options(func):
 )
 @click.version_option(get_version(), "-v", "--version", is_flag=True)
 def cli():
-    """Unraveling Viral Genomes from Metagenomes using Assembly Graphs
+    """
+    Reneo: Unraveling Viral Genomes from Metagenomes
     \b
     For more options, run:
     reneo command --help"""
@@ -107,27 +108,122 @@ Add Snakemake args: reneo run ... --dry-run --keep-going --touch
 Specify targets:    reneo run ... all print_targets
 Available targets:
     all             Run everything (default)
+    preprocess      Run preprocessing only
+    reneo           Run reneo (and preprocessing if needed)
     print_targets   List available targets
 """
 
 
+# Run command
 @click.command(
     epilog=help_msg_extra,
     context_settings=dict(
         help_option_names=["-h", "--help"], ignore_unknown_options=True
     ),
 )
-@click.option("--input", "_input", help="Input file/directory", type=str, required=True)
+@click.option(
+    "--input",
+    help="Path to assembly graph file in .GFA format",
+    type=click.Path(),
+    required=True,
+)
+@click.option(
+    "--reads",
+    help="Path to directory containing paired-end reads",
+    type=click.Path(exists=True),
+    required=True,
+)
+@click.option(
+    "--minlength",
+    default=2000,
+    required=False,
+    help="minimum length of circular unitigs to consider",
+    type=int,
+    show_default=True,
+)
+@click.option(
+    "--mincov",
+    default=1,
+    required=False,
+    help="minimum coverage of paths to output",
+    type=int,
+    show_default=True,
+)
+@click.option(
+    "--compcount",
+    default=200,
+    required=False,
+    help="maximum unitig count to consider a component",
+    type=int,
+    show_default=True,
+)
+@click.option(
+    "--maxpaths",
+    default=10,
+    required=False,
+    help="maximum number of paths to resolve for a component",
+    type=int,
+    show_default=True,
+)
+@click.option(
+    "--mgfrac",
+    default=0.2,
+    required=False,
+    help="length threshold to consider single copy marker genes",
+    type=float,
+    show_default=True,
+)
+@click.option(
+    "--evalue",
+    default=1e-10,
+    required=False,
+    help="maximum e-value for phrog annotations",
+    type=float,
+    show_default=True,
+)
+@click.option(
+    "--hmmscore",
+    default=50,
+    required=False,
+    help="minimum hmm score for vog annotations",
+    type=float,
+    show_default=True,
+)
 @common_options
-def run(_input, output, log, **kwargs):
+def run(
+    input,
+    reads,
+    minlength,
+    mincov,
+    compcount,
+    maxpaths,
+    mgfrac,
+    evalue,
+    hmmscore,
+    output,
+    log,
+    **kwargs
+):
     """Run Reneo"""
     # Config to add or update in configfile
-    merge_config = {"input": _input, "output": output, "log": log}
+    merge_config = {
+        "input": input,
+        "reads": reads,
+        "minlength": minlength,
+        "mincov": mincov,
+        "compcount": compcount,
+        "maxpaths": maxpaths,
+        "mgfrac": mgfrac,
+        "evalue": evalue,
+        "hmmscore": hmmscore,
+        "output": output,
+        "log": log,
+    }
 
     # run!
     run_snakemake(
         # Full path to Snakefile
-        snakefile_path=snake_base(os.path.join("workflow", "Snakefile")),
+        snakefile_path=snake_base(os.path.join("workflow", "reneo.smk")),
         merge_config=merge_config,
         log=log,
         **kwargs

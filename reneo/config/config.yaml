@@ -12,3 +12,12 @@ databases:
 resources:
   jobCPU: 8
   jobMem: 16000       # in Mb
+
+# Reneo parameters
+minlength: 2000
+mincov: 1
+compcount: 200
+maxpaths: 10
+mgfrac: 0.2
+evalue: 1E-10
+hmmscore: 50

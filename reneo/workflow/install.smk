@@ -1,5 +1,5 @@
 """
-Reneo: Unraveling Viral Genomes from Metagenomes using Assembly Graphs.
+Reneo: Unraveling Viral Genomes from Metagenomes.
 
 2023, Vijini Mallawaarachchi
 

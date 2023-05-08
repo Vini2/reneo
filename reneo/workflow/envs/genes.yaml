@@ -1,0 +1,7 @@
+name: genes
+channels:
+  - bioconda
+dependencies:
+  - fraggenescan
+  - hmmer
+  - prodigal
