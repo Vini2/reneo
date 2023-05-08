@@ -1,6 +1,6 @@
 # Reneo: Unraveling Viral Genomes from Metagenomes
 
-[Reneo](https://en.wiktionary.org/wiki/reneo) means to *unravel* or *untangle* in latin. Reneo the software was developed to unravel or untangle high-quality genomes from viral communities found within metagenomes using assembly graphs. It models cyclic viral components in the metagenomic assembly as flow networks, models as a minimum flow decomposition (MFD) problem and resolves genomic paths corresponding to flow paths determined.
+[Reneo](https://en.wiktionary.org/wiki/reneo) means to *unravel* or *untangle* in latin. Reneo is a software developed to unravel or untangle high-quality genomes from viral communities found within metagenomes using assembly graphs. It models cyclic viral components in the metagenomic assembly as flow networks, models as a minimum flow decomposition (MFD) problem and resolves genomic paths corresponding to flow paths determined.
 
 ## Setting up Reneo
 
