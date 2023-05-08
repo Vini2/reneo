@@ -1,2 +1,2 @@
-# virgraf
-VirGraf: A Graph-Based Tool for Resolving Viral Genomes from Metagenomes
+# reneo
+Reneo: Unraveling Viral Genomes from Metagenomes using Assembly Graphs
