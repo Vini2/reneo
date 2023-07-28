@@ -49,7 +49,7 @@ def get_components(
 
             if (
                 vogs_present
-                and unitig_names[unitig] in circular
+                # and unitig_names[unitig] in circular
                 and edges_lengths[unitig_names[unitig]] > cicular_len
             ):
                 pruned_vs[i] = component
