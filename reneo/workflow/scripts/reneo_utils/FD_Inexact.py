@@ -6,7 +6,7 @@ import more_itertools
 import networkx as nx
 
 # create logger
-logger = logging.getLogger("reneo 0.1.0")
+logger = logging.getLogger("reneo 0.2.0")
 
 
 def read_input(graphfile, number_subpath):
