@@ -110,6 +110,7 @@ Available targets:
     all             Run everything (default)
     preprocess      Run preprocessing only
     reneo           Run reneo (and preprocessing if needed)
+    postprocess     Run postprocessing (with preprocessing and reneo if needed)
     print_targets   List available targets
 """
 

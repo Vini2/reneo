@@ -12,6 +12,7 @@ rule run_reneo:
         unitigs = os.path.join(OUTDIR, "resolved_edges.fasta"),
         component_info = os.path.join(OUTDIR, "resolved_component_info.txt"),
         vog_comp_info = os.path.join(OUTDIR, "component_vogs.txt"),
+        unresolved_edges = os.path.join(OUTDIR, "unresolved_virus_like_edges.fasta"),
     params:
         graph = GRAPH_FILE,
         hmmout = SMG_FILE,

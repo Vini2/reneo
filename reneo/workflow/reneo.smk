@@ -28,7 +28,7 @@ def targetRule(fn):
     target_rules.append(fn.__name__[2:])
     return fn
 
-localrules: all, preprocess, reneo, koverage_tsv, print_stages
+localrules: all, preprocess, reneo, koverage_tsv, postprocess, print_stages
 
 
 """Run stages"""
@@ -36,7 +36,8 @@ localrules: all, preprocess, reneo, koverage_tsv, print_stages
 rule all:
     input:
         preprocessTargets,
-        reneoTargets
+        reneoTargets,
+        postprocessTargets
 
 
 @targetRule
@@ -49,6 +50,12 @@ rule preprocess:
 rule reneo:
     input:
         reneoTargets
+
+
+@targetRule
+rule postprocess:
+    input:
+        postprocessTargets
 
 
 @targetRule
@@ -73,3 +80,7 @@ include: os.path.join("rules", "genes.smk")
 
 # Step 5: Run Reneo
 include: os.path.join("rules", "reneo.smk")
+
+
+# Step 6: Postprocess genomes
+include: os.path.join("rules", "postprocess.smk")

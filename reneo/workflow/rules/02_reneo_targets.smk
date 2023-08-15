@@ -1,6 +1,7 @@
 
 preprocessTargets = []
 reneoTargets = []
+postprocessTargets = []
 
 
 """PREPROCESSING TARGETS"""
@@ -37,3 +38,10 @@ reneoTargets.append(RESOLVED_COMP_INFO)
 COMP_VOGS = os.path.join(OUTDIR, "component_vogs.txt")
 reneoTargets.append(COMP_VOGS)
 
+
+"""POSTPROCESSING TARGETS"""
+GENOME_KOVERAGE_RES = os.path.join(OUTDIR, "results", "sample_coverage.tsv")
+postprocessTargets.append(GENOME_KOVERAGE_RES)
+
+GENOME_READ_COUNTS = os.path.join(OUTDIR, "sample_genome_read_counts.tsv")
+postprocessTargets.append(GENOME_READ_COUNTS)
