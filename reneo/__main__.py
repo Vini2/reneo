@@ -135,7 +135,7 @@ Available targets:
 )
 @click.option(
     "--minlength",
-    default=2000,
+    default=1000,
     required=False,
     help="minimum length of circular unitigs to consider",
     type=int,

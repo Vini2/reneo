@@ -17,7 +17,7 @@ resources:
   jobMem: 16000       # in Mb
 
 # Reneo parameters
-minlength: 2000
+minlength: 1000
 mincov: 1
 compcount: 200
 maxpaths: 10
