@@ -21,3 +21,5 @@ maxpaths: 10
 mgfrac: 0.2
 evalue: 1E-10
 hmmscore: 50
+covtol: 100
+alpha: 1.2

@@ -47,6 +47,8 @@ MP = config['maxpaths']
 MGF = config['mgfrac']
 EV = config['evalue']
 HS = config['hmmscore']
+CT = config['covtol']
+AL = config['alpha']
 
 
 """DIRECTORIES/FILES etc.

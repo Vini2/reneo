@@ -146,3 +146,18 @@ def write_component_vog_info(resolved_components, comp_vogs, output):
             myfile.write(f"virus_{comp}\t{comp_vogs[comp]}\n")
 
     return "component_vogs.txt"
+
+
+def init_files(output):
+    """
+    Initialise files and folders
+    """
+
+    open(f"{output}/resolved_edges.fasta", "a").close()
+    open(f"{output}/resolved_paths.fasta", "a").close()
+    open(f"{output}/resolved_genome_info.txt", "a").close()
+    open(f"{output}/resolved_component_info.txt", "a").close()
+    open(f"{output}/component_vogs.txt", "a").close()
+
+    if not os.path.isdir(f"{output}/resolved_viruses"):
+        subprocess.run(f"mkdir -p {output}/resolved_viruses", shell=True)

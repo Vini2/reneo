@@ -48,7 +48,7 @@ def read_input(graphfile, number_subpath):
 
 # FD-Subpath-Inexact-Gurobi
 # --------------------------------------------
-def flowMultipleDecomposition(data, K):
+def flowMultipleDecomposition(data, K, nthreads):
     # libraries
     import gurobipy as gp
     from gurobipy import GRB
@@ -73,7 +73,8 @@ def flowMultipleDecomposition(data, K):
 
         # Create a new model
         model = gp.Model("MFD")
-        model.Params.LogToConsole = 0
+        model.setParam("LogToConsole", 0)
+        model.setParam("Threads", nthreads)
 
         # Create variables
         x = model.addVars(T, vtype=GRB.BINARY, name="x")
@@ -116,10 +117,13 @@ def flowMultipleDecomposition(data, K):
         for k in range(0, K):
             for sp_len in range(0, len(subpaths)):
                 subpath_edges = list(more_itertools.pairwise(subpaths[sp_len]))
-                model.addConstr(
-                    gp.quicksum(x[i, j, k] for (i, j) in subpath_edges)
-                    >= len(subpath_edges) * r[k, sp_len]
-                )
+                try:
+                    model.addConstr(
+                        gp.quicksum(x[i, j, k] for (i, j) in subpath_edges)
+                        >= len(subpath_edges) * r[k, sp_len]
+                    )
+                except:
+                    continue
 
         model.addConstrs(
             gp.quicksum(r[k, sp_len] for k in range(0, K)) >= 1
@@ -167,7 +171,7 @@ def flowMultipleDecomposition(data, K):
     return data
 
 
-def FD_Algorithm(data, max_paths):
+def FD_Algorithm(data, max_paths, nthreads):
     listOfEdges = data["edges"]
     solutionMap = data["graph"]
     solutionSet = 0
@@ -175,7 +179,7 @@ def FD_Algorithm(data, max_paths):
     solutionWeights = 0
 
     for i in range(1, max_paths + 1):
-        data = flowMultipleDecomposition(data, i)
+        data = flowMultipleDecomposition(data, i, nthreads)
         if data["message"] == "solved":
             solutionSet = data["solution"]
             solutionWeights = data["weights"]
@@ -192,7 +196,7 @@ def FD_Algorithm(data, max_paths):
     return data, solution_paths
 
 
-def SolveInstances(Graphs, max_paths, outfile, recfile):
+def SolveInstances(Graphs, max_paths, outfile, recfile, nthreads):
     fp = open(outfile, "w+")
     fc = open(recfile, "w+")
 
@@ -267,6 +271,6 @@ def SolveInstances(Graphs, max_paths, outfile, recfile):
             "runtime": 0,
         }
 
-        data, solution_paths = FD_Algorithm(data, max_paths)
+        data, solution_paths = FD_Algorithm(data, max_paths, nthreads)
 
     return solution_paths

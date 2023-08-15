@@ -25,7 +25,10 @@ rule run_reneo:
         mgfrac = MGF,
         evalue = EV,
         hmmscore = HS,
+        covtol = CT,
+        alpha = AL,
         output = OUTDIR,
+        nthreads = config["resources"]["jobCPU"],
         log = os.path.join(LOGSDIR, "reneo_output.log")
     log:
         os.path.join(LOGSDIR, "reneo_output.log")
