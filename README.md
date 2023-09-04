@@ -92,3 +92,12 @@ reneo run --input assembly_graph.gfa --reads fastq/ --threads 8
 ##  Issues and Questions
 
 Reneo is still under testing. Please report any issues and suggestions under [Reneo Issues](https://github.com/Vini2/reneo/issues).
+
+
+## Citation
+
+The Reneo manuscript is currently in preparation. In the meantime, please cite Reneo as
+
+```
+V Mallawaarachchi, MJ Roach, P Decewicz, EA Dinsdale and RA Edwards (2023). Reneo: Unraveling Viral Genomes from Metagenomes. DOI: 10.5281/zenodo.8263066
+```
