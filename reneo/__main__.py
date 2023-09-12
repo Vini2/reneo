@@ -16,6 +16,7 @@ from .util import (
     run_snakemake,
     OrderedCommands,
     print_citation,
+    tuple_to_list,
 )
 
 
@@ -207,46 +208,16 @@ Available targets:
     show_default=True,
 )
 @common_options
-def run(
-    input,
-    reads,
-    minlength,
-    mincov,
-    compcount,
-    maxpaths,
-    mgfrac,
-    evalue,
-    hmmscore,
-    covtol,
-    alpha,
-    output,
-    log,
-    **kwargs
-):
+def run(**kwargs):
     """Run Reneo"""
     # Config to add or update in configfile
-    merge_config = {
-        "input": input,
-        "reads": reads,
-        "minlength": minlength,
-        "mincov": mincov,
-        "compcount": compcount,
-        "maxpaths": maxpaths,
-        "mgfrac": mgfrac,
-        "evalue": evalue,
-        "hmmscore": hmmscore,
-        "covtol": covtol,
-        "alpha": alpha,
-        "output": output,
-        "log": log,
-    }
+    merge_config = tuple_to_list(kwargs)
 
     # run!
     run_snakemake(
         # Full path to Snakefile
         snakefile_path=snake_base(os.path.join("workflow", "reneo.smk")),
         merge_config=merge_config,
-        log=log,
         **kwargs
     )
 
