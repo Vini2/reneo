@@ -1,6 +1,8 @@
 import glob
 import os
 import pickle
+import threading
+import queue
 from collections import defaultdict
 
 import pysam
@@ -53,12 +55,27 @@ def read_pair_generator(bam, region_string=None):
     return read_dict
 
 
-def get_junction_pe_coverage(bam_path, output):
+def find_links_in_bam(bam_queue, result_queue):
+    link_counts = defaultdict(int)
+    while True:
+        bam_file = bam_queue.get()
+        if bam_file is None:
+            break
+        bam = pysam.AlignmentFile(bam_file, "rb")
+        read_pairs = read_pair_generator(bam)
+        for read1, read2 in read_pairs:
+            if read1.reference_name != read2.reference_name:
+                link_counts[(read1.reference_name, read2.reference_name)] += 1
+    result_queue.put(link_counts)
+
+
+def get_junction_pe_coverage(bam_path, output, nthreads):
     """
     Get number of paired end reads supporting a junction
     """
 
-    link_counts = defaultdict(int)
+    bam_queue = queue.Queue()
+    result_queue = queue.Queue()
 
     if os.path.isfile(f"{output}/junction_pe_coverage.pickle"):
         with open(f"{output}/junction_pe_coverage.pickle", "rb") as handle:
@@ -67,14 +84,28 @@ def get_junction_pe_coverage(bam_path, output):
     else:
         bam_files = glob.glob(bam_path + "/*.bam")
 
+        # populate queue
         for bam_file in bam_files:
-            bam = pysam.AlignmentFile(bam_file, "rb")
+            bam_queue.put(bam_file)
 
-            read_pairs = read_pair_generator(bam)
+        # send finish signal for workers and spawn workers
+        threads = []
+        for _ in range(nthreads):
+            bam_queue.put(None)
+            thread = threading.Thread(target=find_links_in_bam, args=(bam_queue, result_queue))
+            threads.append(thread)
+            thread.start()
 
-            for read1, read2 in read_pairs:
-                if read1.reference_name != read2.reference_name:
-                    link_counts[(read1.reference_name, read2.reference_name)] += 1
+        # join workers
+        for thread in threads:
+            thread.join()
+
+        # combine results
+        link_counts = defaultdict(int)
+        while not result_queue.empty():
+            links = result_queue.get()
+            for ctgs, count in links.items():
+                link_counts[ctgs] += count
 
         with open(f"{output}/junction_pe_coverage.pickle", "wb") as handle:
             pickle.dump(link_counts, handle, protocol=pickle.HIGHEST_PROTOCOL)
