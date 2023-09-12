@@ -13,9 +13,15 @@ profile:
   # jobCPU will be scaled down if running locally with less than 8 threads
   # jobMem is ignored when running locally
 resources:
-  cpu: 32
-  mem: 64000       # in Mb
-  time: "24:00:00"
+  big:
+    cpu: 32
+    mem: 64000        # in Mb
+    time: "24:00:00"
+  ram:
+    cpu: 2
+    mem: 16000        # in Mb
+    time: "01:00:00"
+
 
 # Reneo parameters
 minlength: 1000
