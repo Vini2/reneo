@@ -44,7 +44,6 @@ rule vog_db_download:
     params:
         url=os.path.join(config['vog_db']),
         file=os.path.join(DBPATH, config['vog_db_tar']),
-        vog_db_path = directory(os.path.join(DBPATH, "VOG"))
     output:
         os.path.join(DBPATH, config['vog_db_file'])
     conda:
@@ -52,9 +51,6 @@ rule vog_db_download:
     shell:
         """
             curl -Lo {params.file} {params.url}
-            mkdir {params.vog_db_path}
-            tar -xf {params.file} -C {params.vog_db_path}
-            cat {params.vog_db_path}/* > {output}
+            tar -xOf {params.file} > {output}
             rm -rf {params.file}
-            rm -rf {params.vog_db_path}
         """

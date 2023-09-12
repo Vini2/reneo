@@ -8,9 +8,11 @@ rule scan_smg:
         genome = EDGES_FILE,
         hmm = os.path.join(DBPATH, "marker.hmm"),
     threads:
-        config["resources"]["jobCPU"]
+        config["resources"]["big"]["cpu"]
     resources:
-        mem_mb = config["resources"]["jobMem"]
+        mem_mb = config["resources"]["big"]["mem"],
+        mem = str(config["resources"]["big"]["mem"]) + "MB",
+        time = config["resources"]["big"]["time"]
     output:
         hmmout = os.path.join(OUTDIR, "edges.fasta.hmmout")
     params:
@@ -35,9 +37,11 @@ rule scan_vogs:
         genomes = EDGES_FILE,
         db = os.path.join(DBPATH,"AllVOG.hmm")
     threads:
-        config["resources"]["jobCPU"]
+        config["resources"]["big"]["cpu"]
     resources:
-        mem_mb = config["resources"]["jobMem"]
+        mem_mb = config["resources"]["big"]["mem"],
+        mem = str(config["resources"]["big"]["mem"]) + "MB",
+        time = config["resources"]["big"]["time"]
     output:
         os.path.join(OUTDIR, "all.hmmVOG.tbl")
     params:
@@ -50,6 +54,6 @@ rule scan_vogs:
         os.path.join("..", "envs", "genes.yaml")
     shell:
         """
-        prodigal -i {input.genomes} -d {params.genes} -a {params.proteins} -p meta -g 11 > {log}
+        prodigal -i {input.genomes} -d {params.genes} -a {params.proteins} -p meta -g 11 &> {log}
         hmmsearch --cpu {threads} -E 1.0e-05 -o {params.hmm_out} --tblout {output} {input.db} {params.proteins}
         """

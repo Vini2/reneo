@@ -16,6 +16,7 @@ from .util import (
     run_snakemake,
     OrderedCommands,
     print_citation,
+    tuple_to_list,
 )
 
 
@@ -65,6 +66,12 @@ def common_options(func):
             ],
             help="Customise Snakemake runtime args",
             show_default=True,
+        ),
+        click.option(
+            "--profile",
+            default=None,
+            help="Snakemake profile to use",
+            hidden=False,
         ),
         click.option(
             "--log",
@@ -206,47 +213,23 @@ Available targets:
     type=float,
     show_default=True,
 )
+@click.option(
+    "--hmmsearch/--no-hmmsearch",
+    default=True,
+    help="Perform or skip HMM searches",
+    show_default=True,
+)
 @common_options
-def run(
-    input,
-    reads,
-    minlength,
-    mincov,
-    compcount,
-    maxpaths,
-    mgfrac,
-    evalue,
-    hmmscore,
-    covtol,
-    alpha,
-    output,
-    log,
-    **kwargs
-):
+def run(**kwargs):
     """Run Reneo"""
     # Config to add or update in configfile
-    merge_config = {
-        "input": input,
-        "reads": reads,
-        "minlength": minlength,
-        "mincov": mincov,
-        "compcount": compcount,
-        "maxpaths": maxpaths,
-        "mgfrac": mgfrac,
-        "evalue": evalue,
-        "hmmscore": hmmscore,
-        "covtol": covtol,
-        "alpha": alpha,
-        "output": output,
-        "log": log,
-    }
+    merge_config = tuple_to_list(kwargs)
 
     # run!
     run_snakemake(
         # Full path to Snakefile
         snakefile_path=snake_base(os.path.join("workflow", "reneo.smk")),
         merge_config=merge_config,
-        log=log,
         **kwargs
     )
 

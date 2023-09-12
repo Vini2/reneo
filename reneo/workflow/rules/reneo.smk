@@ -1,10 +1,9 @@
 rule run_reneo:
     input:
-        GRAPH_FILE,
-        COVERAGE_FILE,
-        VOG_ANNOT,
-        SMG_FILE,
-        preprocessTargets
+        graph = GRAPH_FILE,
+        coverage = COVERAGE_FILE,
+        bams = expand(os.path.join(BAM_PATH, "{sample}.{ext}"), sample=SAMPLE_NAMES, ext=["bam","bam.bai"]),
+        other = preprocessTargets
     output:
         genomes_fasta = os.path.join(OUTDIR, "resolved_paths.fasta"),
         genomes_folder = directory(os.path.join(OUTDIR, "resolved_viruses")),
@@ -14,10 +13,10 @@ rule run_reneo:
         vog_comp_info = os.path.join(OUTDIR, "component_vogs.txt"),
         unresolved_edges = os.path.join(OUTDIR, "unresolved_virus_like_edges.fasta"),
     params:
-        graph = GRAPH_FILE,
-        hmmout = SMG_FILE,
-        vogs = VOG_ANNOT,
-        coverage = COVERAGE_FILE,
+        # graph = GRAPH_FILE,
+        vogs=lambda w: VOG_ANNOT if config["hmmsearch"] else "",
+        hmmout=lambda w: SMG_FILE if config["hmmsearch"] else "",
+        # coverage = COVERAGE_FILE,
         bampath = BAM_PATH,
         minlength = ML,
         mincov = MC,
@@ -29,8 +28,14 @@ rule run_reneo:
         covtol = CT,
         alpha = AL,
         output = OUTDIR,
-        nthreads = config["resources"]["jobCPU"],
+        # nthreads = config["resources"]["big"]["cpu"],
         log = os.path.join(LOGSDIR, "reneo_output.log")
+    threads:
+        config["resources"]["big"]["cpu"]
+    resources:
+        mem_mb = config["resources"]["big"]["mem"],
+        mem = str(config["resources"]["big"]["mem"]) + "MB",
+        time = config["resources"]["big"]["time"]
     log:
         os.path.join(LOGSDIR, "reneo_output.log")
     conda:

@@ -15,9 +15,9 @@ preprocessTargets.append(expand(os.path.join(BAM_PATH, "{sample}.bam.bai"), samp
 COVERAGE_PATH = os.path.join(OUTDIR, 'coverage_rpkm/')
 # preprocessTargets.append(expand(os.path.join(COVERAGE_PATH, "{sample}_rpkm.tsv"), sample=SAMPLE_NAMES))
 preprocessTargets.append(os.path.join(OUTDIR, "coverage.tsv"))
-preprocessTargets.append(os.path.join(OUTDIR, "edges.fasta.hmmout"))
-
-preprocessTargets.append(os.path.join(OUTDIR, "all.hmmVOG.tbl"))
+if config["hmmsearch"]:
+    preprocessTargets.append(os.path.join(OUTDIR, "edges.fasta.hmmout"))
+    preprocessTargets.append(os.path.join(OUTDIR, "all.hmmVOG.tbl"))
 
 """MISC"""
 COVERAGE_FILE = os.path.join(OUTDIR, 'coverage.tsv')

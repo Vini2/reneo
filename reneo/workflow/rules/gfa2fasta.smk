@@ -12,6 +12,12 @@ rule run_gfa2fasta:
         graph = GRAPH_FILE,
         output = OUTDIR,
         log = os.path.join(LOGSDIR, "gfa2fasta.log")
+    threads:
+        config["resources"]["ram"]["cpu"]
+    resources:
+        mem_mb = config["resources"]["ram"]["mem"],
+        mem = str(config["resources"]["ram"]["mem"]) + "MB",
+        time = config["resources"]["ram"]["time"]
     log:
         os.path.join(LOGSDIR, "gfa2fasta.log")
     conda: 

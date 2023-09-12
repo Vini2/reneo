@@ -122,6 +122,16 @@ def copy_config(
         )
 
 
+def tuple_to_list(dictionary):
+    """Convert click tuples to lists for pyyaml"""
+    out_dict = {}
+    for key, value in dictionary.items():
+        if isinstance(value, tuple):
+            out_dict[key] = list(value)
+        else:
+            out_dict[key] = value
+    return out_dict
+
 """RUN A SNAKEFILE
 Hopefully you shouldn't need to tweak this function at all.
 - You must provide a Snakefile, all else is optional
@@ -138,6 +148,8 @@ def run_snakemake(
     snake_default=None,
     snake_args=[],
     log=None,
+    profile=None,
+    **kwargs
 ):
     """Run a Snakefile"""
     snake_command = ["snakemake", "-s", snakefile_path]
@@ -161,7 +173,9 @@ def run_snakemake(
         )
 
     # add threads
-    if not "--profile" in snake_args:
+    if profile:
+        snake_command += ["--profile", profile]
+    else:
         snake_command += ["--jobs", threads]
 
     # add conda args if using conda

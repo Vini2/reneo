@@ -9,6 +9,7 @@ rule koverage_tsv:
         os.path.join(OUTDIR,"reneo.samples.tsv")
     params:
         SAMPLE_READS
+    localrule: True
     run:
         from metasnek import fastq_finder
         fastq_finder.write_samples_tsv(params[0], output[0])
@@ -28,10 +29,11 @@ rule koverage:
                ext=["bam","bam.bai"]),
         os.path.join(OUTDIR, "results", "sample_coverm_coverage.tsv")
     threads:
-        config["resources"]["jobCPU"]
+        config["resources"]["big"]["cpu"]
     resources:
-        mem_mb = config["resources"]["jobMem"],
-        mem = str(config["resources"]["jobMem"]) + "MB"
+        mem_mb = config["resources"]["big"]["mem"],
+        mem = str(config["resources"]["big"]["mem"]) + "MB",
+        time= config["resources"]["big"]["time"]
     conda:
         os.path.join("..", "envs", "koverage.yaml")
     shell:

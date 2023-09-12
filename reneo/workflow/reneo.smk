@@ -28,14 +28,15 @@ def targetRule(fn):
     target_rules.append(fn.__name__[2:])
     return fn
 
-localrules: all, preprocess, reneo, koverage_tsv, postprocess, print_stages
+if config["profile"]:
+    localrules: koverage, koverage_genomes
 
 
 """Run stages"""
 @targetRule
 rule all:
     input:
-        preprocessTargets,
+        # preprocessTargets,
         reneoTargets,
         postprocessTargets
 

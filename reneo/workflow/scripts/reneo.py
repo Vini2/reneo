@@ -38,8 +38,8 @@ LEN_THRESHOLD = 0.95
 def main():
     # Get arguments
     # ----------------------------------------------------------------------
-    graph = snakemake.params.graph
-    coverage = snakemake.params.coverage
+    graph = snakemake.input.graph
+    coverage = snakemake.input.coverage
     bampath = snakemake.params.bampath
     hmmout = snakemake.params.hmmout
     vogs = snakemake.params.vogs
@@ -54,7 +54,7 @@ def main():
     covtol = float(snakemake.params.covtol)
     alpha = float(snakemake.params.alpha)
     output = snakemake.params.output
-    nthreads = int(snakemake.params.nthreads)
+    nthreads = snakemake.threads
     log = snakemake.params.log
 
     # Setup logger
@@ -132,13 +132,17 @@ def main():
 
     # Get unitigs with bacterial single copy marker genes
     # ----------------------------------------------------------------------
-    smg_unitigs = gene_utils.get_smg_unitigs(hmmout, mgfrac)
+    if hmmout:
+        smg_unitigs = gene_utils.get_smg_unitigs(hmmout, mgfrac)
+    else:
+        smg_unitigs = set()
 
     # Get unitigs with PHROGs
     # ----------------------------------------------------------------------
-    unitig_vogs = gene_utils.get_vog_unitigs(
-        vogs, evalue, hmmscore
-    )
+    if vogs:
+        unitig_vogs = gene_utils.get_vog_unitigs(vogs, evalue, hmmscore)
+    else:
+        unitig_vogs = graph_unitigs
 
     # Get components with viral genes
     # ----------------------------------------------------------------------
@@ -155,9 +159,10 @@ def main():
 
     # Get unitig and junction pe coverages
     # ----------------------------------------------------------------------
-
+    logger.info("Getting unitig coverage")
     unitig_coverages = get_unitig_coverage(coverage)
-    junction_pe_coverage = get_junction_pe_coverage(bampath, output)
+    logger.info("Getting junction pe coverage")
+    junction_pe_coverage = get_junction_pe_coverage(bampath, output, nthreads)
 
     # Resolve genomes
     # ----------------------------------------------------------------------
@@ -188,6 +193,7 @@ def main():
     unresolved_virus_like_edges = set()
 
     for my_count in tqdm(pruned_vs, desc="Resolving components"):
+        # logger.info(f"Resolving for {my_count}")
         component_time_start = time.time()
 
         my_genomic_paths = []
