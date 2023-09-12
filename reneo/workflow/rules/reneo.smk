@@ -30,10 +30,10 @@ rule run_reneo:
         covtol = CT,
         alpha = AL,
         output = OUTDIR,
-        # nthreads = config["resources"]["cpu"],
+        # nthreads = config["resources"]["big"]["cpu"],
         log = os.path.join(LOGSDIR, "reneo_output.log")
     threads:
-        config["resources"]["cpu"]
+        config["resources"]["big"]["cpu"]
     resources:
         mem_mb = config["resources"]["big"]["mem"],
         mem = str(config["resources"]["big"]["mem"]) + "MB",

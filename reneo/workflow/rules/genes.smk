@@ -8,7 +8,7 @@ rule scan_smg:
         genome = EDGES_FILE,
         hmm = os.path.join(DBPATH, "marker.hmm"),
     threads:
-        config["resources"]["cpu"]
+        config["resources"]["big"]["cpu"]
     resources:
         mem_mb = config["resources"]["big"]["mem"],
         mem = str(config["resources"]["big"]["mem"]) + "MB",
@@ -37,7 +37,7 @@ rule scan_vogs:
         genomes = EDGES_FILE,
         db = os.path.join(DBPATH,"AllVOG.hmm")
     threads:
-        config["resources"]["cpu"]
+        config["resources"]["big"]["cpu"]
     resources:
         mem_mb = config["resources"]["big"]["mem"],
         mem = str(config["resources"]["big"]["mem"]) + "MB",
