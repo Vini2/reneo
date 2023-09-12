@@ -20,7 +20,7 @@ print(f"Output files will be saved to directory, {OUTDIR}\n")
 # Checking through the reads folder
 ############################################################################
 
-SAMPLE_READS = fastq_finder.parse_samples_to_dictionary(config['reads'])
+SAMPLE_READS = dict(sorted(fastq_finder.parse_samples_to_dictionary(config['reads']).items()))
 SAMPLE_NAMES = list(SAMPLE_READS.keys())
 
 

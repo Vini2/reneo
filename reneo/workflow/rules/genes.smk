@@ -8,9 +8,11 @@ rule scan_smg:
         genome = EDGES_FILE,
         hmm = os.path.join(DBPATH, "marker.hmm"),
     threads:
-        config["resources"]["jobCPU"]
+        config["resources"]["cpu"]
     resources:
-        mem_mb = config["resources"]["jobMem"]
+        mem_mb = config["resources"]["mem"],
+        mem = str(config["resources"]["mem"]) + "MB",
+        time = config["resources"]["time"]
     output:
         hmmout = os.path.join(OUTDIR, "edges.fasta.hmmout")
     params:
@@ -35,9 +37,11 @@ rule scan_vogs:
         genomes = EDGES_FILE,
         db = os.path.join(DBPATH,"AllVOG.hmm")
     threads:
-        config["resources"]["jobCPU"]
+        config["resources"]["cpu"]
     resources:
-        mem_mb = config["resources"]["jobMem"]
+        mem_mb = config["resources"]["mem"],
+        mem = str(config["resources"]["mem"]) + "MB",
+        time = config["resources"]["time"]
     output:
         os.path.join(OUTDIR, "all.hmmVOG.tbl")
     params:

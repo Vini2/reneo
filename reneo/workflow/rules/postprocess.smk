@@ -22,10 +22,11 @@ rule koverage_genomes:
     output:
         os.path.join(OUTDIR, "results", "sample_coverage.tsv")
     threads:
-        config["resources"]["jobCPU"]
+        config["resources"]["cpu"]
     resources:
-        mem_mb = config["resources"]["jobMem"],
-        mem = str(config["resources"]["jobMem"]) + "MB"
+        mem_mb = config["resources"]["mem"],
+        mem = str(config["resources"]["mem"]) + "MB",
+        time = config["resources"]["time"]
     conda:
         os.path.join("..", "envs", "koverage.yaml")
     shell:
