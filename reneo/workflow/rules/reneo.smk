@@ -2,10 +2,8 @@ rule run_reneo:
     input:
         graph = GRAPH_FILE,
         coverage = COVERAGE_FILE,
-        bams = expand(os.path.join(BAM_PATH, "{sample}.{ext}"), sample=SAMPLE_NAMES, ext=["bam","bam.bai"])
-        # VOG_ANNOT,
-        # SMG_FILE,
-        # preprocessTargets
+        bams = expand(os.path.join(BAM_PATH, "{sample}.{ext}"), sample=SAMPLE_NAMES, ext=["bam","bam.bai"]),
+        other = preprocessTargets
     output:
         genomes_fasta = os.path.join(OUTDIR, "resolved_paths.fasta"),
         genomes_folder = directory(os.path.join(OUTDIR, "resolved_viruses")),
@@ -16,8 +14,8 @@ rule run_reneo:
         unresolved_edges = os.path.join(OUTDIR, "unresolved_virus_like_edges.fasta"),
     params:
         # graph = GRAPH_FILE,
-        hmmout = None,
-        vogs = None,
+        vogs=lambda w: VOG_ANNOT if config["hmmsearch"] else "",
+        hmmout=lambda w: SMG_FILE if config["hmmsearch"] else "",
         # coverage = COVERAGE_FILE,
         bampath = BAM_PATH,
         minlength = ML,

@@ -68,6 +68,12 @@ def common_options(func):
             show_default=True,
         ),
         click.option(
+            "--profile",
+            default=None,
+            help="Snakemake profile to use",
+            hidden=False,
+        ),
+        click.option(
             "--log",
             default="reneo.log",
             callback=default_to_output,
@@ -205,6 +211,12 @@ Available targets:
     required=False,
     help="coverage multiplier for flow interval modelling",
     type=float,
+    show_default=True,
+)
+@click.option(
+    "--hmmsearch/--no-hmmsearch",
+    default=True,
+    help="Perform or skip HMM searches",
     show_default=True,
 )
 @common_options

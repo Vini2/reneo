@@ -41,10 +41,8 @@ def main():
     graph = snakemake.input.graph
     coverage = snakemake.input.coverage
     bampath = snakemake.params.bampath
-    # hmmout = snakemake.params.hmmout
-    hmmout = None
-    # vogs = snakemake.params.vogs
-    vogs = None
+    hmmout = snakemake.params.hmmout
+    vogs = snakemake.params.vogs
     minlength = int(snakemake.params.minlength)
     mincov = int(snakemake.params.mincov)
     compcount = int(snakemake.params.compcount)
@@ -134,15 +132,17 @@ def main():
 
     # Get unitigs with bacterial single copy marker genes
     # ----------------------------------------------------------------------
-    # smg_unitigs = gene_utils.get_smg_unitigs(hmmout, mgfrac)
-    smg_unitigs = set()
+    if hmmout:
+        smg_unitigs = gene_utils.get_smg_unitigs(hmmout, mgfrac)
+    else:
+        smg_unitigs = set()
 
     # Get unitigs with PHROGs
     # ----------------------------------------------------------------------
-    # unitig_vogs = gene_utils.get_vog_unitigs(
-    #     vogs, evalue, hmmscore
-    # )
-    unitig_vogs = graph_unitigs
+    if vogs:
+        unitig_vogs = gene_utils.get_vog_unitigs(vogs, evalue, hmmscore)
+    else:
+        unitig_vogs = graph_unitigs
 
     # Get components with viral genes
     # ----------------------------------------------------------------------

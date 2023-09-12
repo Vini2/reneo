@@ -54,6 +54,6 @@ rule scan_vogs:
         os.path.join("..", "envs", "genes.yaml")
     shell:
         """
-        prodigal -i {input.genomes} -d {params.genes} -a {params.proteins} -p meta -g 11 > {log}
+        prodigal -i {input.genomes} -d {params.genes} -a {params.proteins} -p meta -g 11 &> {log}
         hmmsearch --cpu {threads} -E 1.0e-05 -o {params.hmm_out} --tblout {output} {input.db} {params.proteins}
         """
