@@ -159,9 +159,10 @@ def main():
 
     # Get unitig and junction pe coverages
     # ----------------------------------------------------------------------
-
+    logger.info("Getting unitig coverage")
     unitig_coverages = get_unitig_coverage(coverage)
-    junction_pe_coverage = get_junction_pe_coverage(bampath, output)
+    logger.info("Getting junction pe coverage")
+    junction_pe_coverage = get_junction_pe_coverage(bampath, output, nthreads)
 
     # Resolve genomes
     # ----------------------------------------------------------------------
@@ -192,6 +193,7 @@ def main():
     unresolved_virus_like_edges = set()
 
     for my_count in tqdm(pruned_vs, desc="Resolving components"):
+        # logger.info(f"Resolving for {my_count}")
         component_time_start = time.time()
 
         my_genomic_paths = []
