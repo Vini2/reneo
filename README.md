@@ -1,4 +1,9 @@
-# Reneo: Unraveling Viral Genomes from Metagenomes
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Vini2/reneo/develop/reneo_logo.png" width="250" title="reneo logo" alt="phables logo">
+</p>
+
+Reneo: Unraveling Viral Genomes from Metagenomes
+===============
 
 [![DOI](https://zenodo.org/badge/619432085.svg)](https://zenodo.org/badge/latestdoi/619432085)
 ![GitHub](https://img.shields.io/github/license/vini2/reneo)
