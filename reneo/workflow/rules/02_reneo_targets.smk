@@ -4,6 +4,13 @@ reneoTargets = []
 postprocessTargets = []
 
 
+"""MISC"""
+COVERAGE_FILE = os.path.join(OUTDIR, 'results', 'reneo.coverage.tsv')
+VOG_ANNOT = os.path.join(OUTDIR, 'all.hmmVOG.tbl')
+SMG_FILE = os.path.join(OUTDIR, 'edges.fasta.hmmout')
+GRAPH_FILE = INPUT
+
+
 """PREPROCESSING TARGETS"""
 EDGES_FILE = os.path.join(OUTDIR, "edges.fasta")
 preprocessTargets.append(EDGES_FILE)
@@ -14,16 +21,10 @@ preprocessTargets.append(expand(os.path.join(BAM_PATH, "{sample}.bam.bai"), samp
 
 COVERAGE_PATH = os.path.join(OUTDIR, 'coverage_rpkm/')
 # preprocessTargets.append(expand(os.path.join(COVERAGE_PATH, "{sample}_rpkm.tsv"), sample=SAMPLE_NAMES))
-preprocessTargets.append(os.path.join(OUTDIR, "coverage.tsv"))
+preprocessTargets.append(COVERAGE_FILE)
 if config["hmmsearch"]:
-    preprocessTargets.append(os.path.join(OUTDIR, "edges.fasta.hmmout"))
-    preprocessTargets.append(os.path.join(OUTDIR, "all.hmmVOG.tbl"))
-
-"""MISC"""
-COVERAGE_FILE = os.path.join(OUTDIR, 'coverage.tsv')
-VOG_ANNOT = os.path.join(OUTDIR, 'all.hmmVOG.tbl')
-SMG_FILE = os.path.join(OUTDIR, 'edges.fasta.hmmout')
-GRAPH_FILE = INPUT
+    preprocessTargets.append(SMG_FILE)
+    preprocessTargets.append(VOG_ANNOT)
 
 
 """PHABLES TARGETS"""

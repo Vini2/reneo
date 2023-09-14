@@ -27,9 +27,9 @@ rule koverage:
         expand(os.path.join(OUTDIR, "temp", "{sample}.{ext}"),
                sample=SAMPLE_NAMES,
                ext=["bam","bam.bai"]),
-        os.path.join(OUTDIR, "results", "sample_coverm_coverage.tsv")
+        COVERAGE_FILE
     threads:
-        config["resources"]["big"]["cpu"]
+        lambda w: 1 if config["profile"] else config["resources"]["big"]["cpu"]
     resources:
         mem_mb = config["resources"]["big"]["mem"],
         mem = str(config["resources"]["big"]["mem"]) + "MB",
@@ -38,7 +38,7 @@ rule koverage:
         os.path.join("..", "envs", "koverage.yaml")
     shell:
         """
-        koverage run coverm \
+        koverage run reneo_coverage \
             --reads {input.tsv} \
             --ref {input.edges} \
             --threads {threads} \
@@ -47,14 +47,14 @@ rule koverage:
         """
 
 
-rule run_combine_cov:
-    """Sample\tContig\tCount\tRPKM\tTPM\tMean\tCovered_bases\tVariance\n"""
-    input:
-        os.path.join(OUTDIR, "results", "sample_coverm_coverage.tsv")
-    output:
-        os.path.join(OUTDIR, "coverage.tsv")
-    shell:
-        """
-        sed -i '1d' {input}
-        awk -F '\t' '{{ sum[$2] += $6 }} END {{ for (key in sum) print key, sum[key] }}' {input} > {output}
-        """
+# rule run_combine_cov:
+#     """Sample\tContig\tCount\tRPKM\tTPM\tMean\tCovered_bases\tVariance\n"""
+#     input:
+#         os.path.join(OUTDIR, "results", "sample_coverm_coverage.tsv")
+#     output:
+#         os.path.join(OUTDIR, "coverage.tsv")
+#     shell:
+#         """
+#         sed -i '1d' {input}
+#         awk -F '\t' '{{ sum[$2] += $6 }} END {{ for (key in sum) print key, sum[key] }}' {input} > {output}
+#         """

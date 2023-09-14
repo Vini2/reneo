@@ -22,7 +22,7 @@ rule koverage_genomes:
     output:
         os.path.join(OUTDIR, "results", "sample_coverage.tsv")
     threads:
-        config["resources"]["big"]["cpu"]
+        lambda w: 1 if config["profile"] else config["resources"]["big"]["cpu"]
     resources:
         mem_mb = config["resources"]["big"]["mem"],
         mem = str(config["resources"]["big"]["mem"]) + "MB",
