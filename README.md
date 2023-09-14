@@ -1,4 +1,9 @@
-# Reneo: Unraveling Viral Genomes from Metagenomes
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Vini2/reneo/develop/reneo_logo.png" width="300" title="reneo logo" alt="reneo logo">
+</p>
+
+Reneo: Unraveling Viral Genomes from Metagenomes
+===============
 
 [![DOI](https://zenodo.org/badge/619432085.svg)](https://zenodo.org/badge/latestdoi/619432085)
 ![GitHub](https://img.shields.io/github/license/vini2/reneo)
@@ -6,7 +11,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/Vini2/reneo?color=8a35da)
 
-[Reneo](https://en.wiktionary.org/wiki/reneo) means to *unravel* or *untangle* in latin. Reneo is a software developed to unravel or untangle high-quality genomes from viral communities (including both prokaryotic and eukaryotic viruses) found within metagenomes using assembly graphs. Reneo identifies viral components in the metagenomic assembly using virus orthologous groups from [VOGDB](https://vogdb.org/), models as flow networks and solves a minimum flow decomposition (MFD) problem to resolve genomic paths.
+[Reneo](https://en.wiktionary.org/wiki/reneo) means to *unravel* or *untangle* in Latin. Reneo is a software developed to unravel or untangle high-quality genomes from viral communities (including both prokaryotic and eukaryotic viruses) found within metagenomes using assembly graphs. Reneo identifies viral components in the metagenomic assembly using virus orthologous groups from [VOGDB](https://vogdb.org/), models as flow networks and solves a minimum flow decomposition (MFD) problem to resolve genomic paths.
 
 ## Setting up Reneo
 
@@ -94,10 +99,15 @@ reneo run --input assembly_graph.gfa --reads fastq/ --threads 8
 Reneo is still under testing. Please report any issues and suggestions under [Reneo Issues](https://github.com/Vini2/reneo/issues).
 
 
+## Acknowledgement
+
+Reneo uses the [Gurobi](https://www.gurobi.com/) implementation of [MFD-ILP](https://github.com/algbio/MFD-ILP) and code snippets from [Phables](https://github.com/Vini2/phables/). The Reneo logo was designed by [Laura Inglis](https://fame.flinders.edu.au/people/2021/01/01/laura-inglis).
+
+
 ## Citation
 
 The Reneo manuscript is currently in preparation. In the meantime, please cite Reneo as
 
 ```
-V Mallawaarachchi, MJ Roach, P Decewicz, EA Dinsdale and RA Edwards (2023). Reneo: Unraveling Viral Genomes from Metagenomes. DOI: 10.5281/zenodo.8263066
+V Mallawaarachchi, MJ Roach, P Decewicz, B Papudeshi, SR Grigson, LK Inglis, SK Giles, EA Dinsdale and RA Edwards (2023). Reneo: Unraveling Viral Genomes from Metagenomes. DOI: 10.5281/zenodo.8263066
 ```
