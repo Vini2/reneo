@@ -11,7 +11,7 @@ Reneo: Unraveling Viral Genomes from Metagenomes
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/Vini2/reneo?color=8a35da)
 
-[Reneo](https://en.wiktionary.org/wiki/reneo) means to *unravel* or *untangle* in Latin. Reneo is a software developed to unravel or untangle high-quality genomes from viral communities (including both prokaryotic and eukaryotic viruses) found within metagenomes using assembly graphs. Reneo identifies viral components in the metagenomic assembly using virus orthologous groups from [VOGDB](https://vogdb.org/), models as flow networks and solves a minimum flow decomposition (MFD) problem to resolve genomic paths.
+[Reneo](https://en.wiktionary.org/wiki/reneo) means to *unravel* or *untangle* in Latin. Reneo is a software developed to unravel or untangle high-quality genomes from viral communities (including both prokaryotic and eukaryotic viruses) found within metagenomes using assembly graphs. Reneo identifies viral components in the metagenomic assembly using virus orthologous groups from [VOGDB](https://vogdb.org/), models as flow networks and solves a minimum flow decomposition (MFD) problem to resolve genomic paths. Reneo was motivated based on a bacteriophage recover tool named [Phables](https://github.com/Vini2/phables), specifically to extend the capabilities of Phables to all viruses.
 
 ## Setting up Reneo
 
