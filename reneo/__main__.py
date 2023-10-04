@@ -59,7 +59,6 @@ def common_options(func):
             "--snake-default",
             multiple=True,
             default=[
-                "--rerun-incomplete",
                 "--printshellcmds",
                 "--nolock",
                 "--show-failed-logs",

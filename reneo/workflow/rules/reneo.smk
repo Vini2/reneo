@@ -2,13 +2,14 @@ rule run_reneo:
     input:
         graph = GRAPH_FILE,
         coverage = COVERAGE_FILE,
+        pickle = PICKLE_FILE,
         bams = expand(os.path.join(BAM_PATH, "{sample}.{ext}"), sample=SAMPLE_NAMES, ext=["bam","bam.bai"]),
         other = preprocessTargets
     output:
         genomes_fasta = os.path.join(OUTDIR, "resolved_paths.fasta"),
-        genomes_folder = directory(os.path.join(OUTDIR, "resolved_viruses")),
+        # genomes_folder = directory(os.path.join(OUTDIR, "resolved_viruses")), # todo: optional
         genome_info = os.path.join(OUTDIR, "resolved_genome_info.txt"),
-        unitigs = os.path.join(OUTDIR, "resolved_edges.fasta"),
+        # unitigs = os.path.join(OUTDIR, "resolved_edges.fasta"), # todo: optional
         component_info = os.path.join(OUTDIR, "resolved_component_info.txt"),
         vog_comp_info = os.path.join(OUTDIR, "component_vogs.txt"),
         unresolved_edges = os.path.join(OUTDIR, "unresolved_virus_like_edges.fasta"),

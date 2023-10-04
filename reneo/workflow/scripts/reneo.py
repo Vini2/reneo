@@ -3,6 +3,7 @@
 import logging
 import sys
 import time
+import pickle
 
 import networkx as nx
 from igraph import *
@@ -40,6 +41,7 @@ def main():
     # ----------------------------------------------------------------------
     graph = snakemake.input.graph
     coverage = snakemake.input.coverage
+    pickle_file = snakemake.input.pickle
     bampath = snakemake.params.bampath
     hmmout = snakemake.params.hmmout
     vogs = snakemake.params.vogs
@@ -162,7 +164,9 @@ def main():
     logger.info("Getting unitig coverage")
     unitig_coverages = get_unitig_coverage(coverage)
     logger.info("Getting junction pe coverage")
-    junction_pe_coverage = get_junction_pe_coverage(bampath, output, nthreads)
+    # junction_pe_coverage = get_junction_pe_coverage(bampath, output, nthreads)
+    with open(pickle_file, "rb") as handle:
+        junction_pe_coverage = pickle.load(handle)
 
     # Resolve genomes
     # ----------------------------------------------------------------------
@@ -1366,7 +1370,7 @@ def main():
         # Write genome path to file
         # ----------------------------------------------------------------------
         write_path(final_genomic_paths, output)
-        write_path_fasta(final_genomic_paths, f"{output}/resolved_viruses")
+        #write_path_fasta(final_genomic_paths, f"{output}/resolved_viruses")
 
     # Log final summary information
     # ----------------------------------------------------------------------
@@ -1394,17 +1398,17 @@ def main():
     # Write edges to file
     # ----------------------------------------------------------------------
 
-    write_unitigs(
-        virus_like_edges, unitig_names, graph_unitigs, "virus_like_edges", output
-    )
-    write_unitigs(
-        all_virus_like_edges,
-        unitig_names,
-        graph_unitigs,
-        "all_virus_like_edges",
-        output,
-    )
-    write_unitigs(resolved_edges, unitig_names, graph_unitigs, "resolved_edges", output)
+    # write_unitigs(
+    #     virus_like_edges, unitig_names, graph_unitigs, "virus_like_edges", output
+    # )
+    # write_unitigs(
+    #     all_virus_like_edges,
+    #     unitig_names,
+    #     graph_unitigs,
+    #     "all_virus_like_edges",
+    #     output,
+    # )
+    # write_unitigs(resolved_edges, unitig_names, graph_unitigs, "resolved_edges", output)
     write_unitigs(
         unresolved_virus_like_edges,
         unitig_names,

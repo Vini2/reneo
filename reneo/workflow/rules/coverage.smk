@@ -47,14 +47,33 @@ rule koverage:
         """
 
 
-# rule run_combine_cov:
-#     """Sample\tContig\tCount\tRPKM\tTPM\tMean\tCovered_bases\tVariance\n"""
-#     input:
-#         os.path.join(OUTDIR, "results", "sample_coverm_coverage.tsv")
-#     output:
-#         os.path.join(OUTDIR, "coverage.tsv")
-#     shell:
-#         """
-#         sed -i '1d' {input}
-#         awk -F '\t' '{{ sum[$2] += $6 }} END {{ for (key in sum) print key, sum[key] }}' {input} > {output}
-#         """
+rule find_junctions_and_pickle:
+    """Parse the BAM file and create a python dictionary pickle of PE junctions for contig pairs"""
+    input:
+        bam = os.path.join(OUTDIR, "temp", "{sample}.bam"),
+        bai = os.path.join(OUTDIR, "temp", "{sample}.bam.bai"),
+    output:
+        pkl = temp(os.path.join(OUTDIR, "temp", "{sample}.pkl"))
+    log:
+        err = os.path.join(LOGSDIR, "find_junctions_and_pickle.{sample}.log")
+    benchmark:
+        os.path.join(BENCH, "find_junctions_and_pickle.{sample}.log")
+    conda:
+        os.path.join("..", "envs", "reneo.yaml")
+    script:
+        os.path.join("..", "scripts", "sampleJunctions.py")
+
+
+rule combine_junction_pickles:
+    input:
+        pkls = expand(os.path.join(OUTDIR, "temp", "{sample}.pkl"), sample=SAMPLE_NAMES)
+    output:
+        pkl = protected(PICKLE_FILE)
+    log:
+        err=os.path.join(LOGSDIR,"combine_junction_pickles.log")
+    benchmark:
+        os.path.join(BENCH,"combine_junction_pickles.log")
+    conda:
+        os.path.join("..","envs","reneo.yaml")
+    script:
+        os.path.join("..","scripts","combineJunctionPickles.py")

@@ -9,7 +9,7 @@ COVERAGE_FILE = os.path.join(OUTDIR, 'results', 'reneo.coverage.tsv')
 VOG_ANNOT = os.path.join(OUTDIR, 'all.hmmVOG.tbl')
 SMG_FILE = os.path.join(OUTDIR, 'edges.fasta.hmmout')
 GRAPH_FILE = INPUT
-
+PICKLE_FILE = os.path.join(OUTDIR, "PE_junctions.pkl")
 
 """PREPROCESSING TARGETS"""
 EDGES_FILE = os.path.join(OUTDIR, "edges.fasta")

@@ -43,6 +43,7 @@ AL = config['alpha']
 Declare some directories for pipeline intermediates and outputs.
 """
 LOGSDIR = os.path.join(OUTDIR, 'logs')
+BENCH = os.path.join(OUTDIR, 'bench')
 
 
 """ONSTART/END/ERROR
