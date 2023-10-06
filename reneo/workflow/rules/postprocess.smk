@@ -2,9 +2,9 @@ rule combine_genomes_and_unresolved_edges:
     """Combine resolved genomes and unresolved edges"""
     input:
         genomes = RESOLVED_GENOMES,
-        unresolved_edges = os.path.join(OUTDIR, "unresolved_virus_like_edges.fasta")
+        unresolved_edges = os.path.join(RESDIR, "unresolved_virus_like_edges.fasta")
     output:
-        os.path.join(OUTDIR, "genomes_and_unresolved_edges.fasta")
+        os.path.join(RESDIR, "genomes_and_unresolved_edges.fasta")
     shell:
         """
         cat {input.genomes} {input.unresolved_edges} > {output}
@@ -15,7 +15,7 @@ rule koverage_genomes:
     """Get coverage statistics with Koverage"""
     input:
         tsv = os.path.join(OUTDIR,"reneo.samples.tsv"),
-        sequences = os.path.join(OUTDIR, "genomes_and_unresolved_edges.fasta")
+        sequences = os.path.join(RESDIR, "genomes_and_unresolved_edges.fasta")
     params:
         out_dir = OUTDIR,
         profile = lambda wildcards: "--profile " + config["profile"] if config["profile"] else "",
@@ -45,7 +45,7 @@ rule koverage_postprocess:
     input:
         koverage_tsv = os.path.join(RESDIR, "sample_coverage.tsv"),
         samples_file = os.path.join(OUTDIR, "reneo.samples.tsv"),
-        seq_file = os.path.join(OUTDIR, "genomes_and_unresolved_edges.fasta")
+        seq_file = os.path.join(RESDIR, "genomes_and_unresolved_edges.fasta")
     output:
         os.path.join(RESDIR, "sample_genome_read_counts.tsv")
     params:

@@ -29,8 +29,6 @@ rule run_reneo:
         covtol = CT,
         alpha = AL,
         output = RESDIR,
-        # nthreads = config["resources"]["big"]["cpu"],
-        log = os.path.join(LOGSDIR, "reneo_output.log")
     threads:
         config["resources"]["big"]["cpu"]
     resources:
@@ -38,7 +36,8 @@ rule run_reneo:
         mem = str(config["resources"]["big"]["mem"]) + "MB",
         time = config["resources"]["big"]["time"]
     log:
-        os.path.join(LOGSDIR, "reneo_output.log")
+        err = os.path.join(LOGSDIR, "reneo_output.err"),
+        out = os.path.join(LOGSDIR, "reneo_output.out")
     conda:
         os.path.join("..", "envs", "reneo.yaml")
     script:
