@@ -13,7 +13,8 @@ Setting the directory variables
 # THREADS = config['threads']
 INPUT = config['input']
 OUTDIR = config['output']
-print(f"Output files will be saved to directory, {OUTDIR}\n")
+RESDIR = os.path.join(config['output'], "results")
+print(f"Output files will be saved to directory, {RESDIR}\n")
 
 
 ############################################################################
@@ -22,7 +23,6 @@ print(f"Output files will be saved to directory, {OUTDIR}\n")
 
 SAMPLE_READS = dict(sorted(fastq_finder.parse_samples_to_dictionary(config['reads']).items()))
 SAMPLE_NAMES = list(SAMPLE_READS.keys())
-
 
 
 ############################################################################

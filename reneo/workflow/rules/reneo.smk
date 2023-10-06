@@ -6,13 +6,13 @@ rule run_reneo:
         bams = expand(os.path.join(BAM_PATH, "{sample}.{ext}"), sample=SAMPLE_NAMES, ext=["bam","bam.bai"]),
         other = preprocessTargets
     output:
-        genomes_fasta = os.path.join(OUTDIR, "resolved_paths.fasta"),
-        # genomes_folder = directory(os.path.join(OUTDIR, "resolved_viruses")), # todo: optional
-        genome_info = os.path.join(OUTDIR, "resolved_genome_info.txt"),
-        # unitigs = os.path.join(OUTDIR, "resolved_edges.fasta"), # todo: optional
-        component_info = os.path.join(OUTDIR, "resolved_component_info.txt"),
-        vog_comp_info = os.path.join(OUTDIR, "component_vogs.txt"),
-        unresolved_edges = os.path.join(OUTDIR, "unresolved_virus_like_edges.fasta"),
+        genomes_fasta = os.path.join(RESDIR, "resolved_paths.fasta"),
+        # genomes_folder = directory(os.path.join(RESDIR, "resolved_viruses")), # todo: optional
+        genome_info = os.path.join(RESDIR, "resolved_genome_info.txt"),
+        # unitigs = os.path.join(RESDIR, "resolved_edges.fasta"), # todo: optional
+        component_info = os.path.join(RESDIR, "resolved_component_info.txt"),
+        vog_comp_info = os.path.join(RESDIR, "component_vogs.txt"),
+        unresolved_edges = os.path.join(RESDIR, "unresolved_virus_like_edges.fasta"),
     params:
         # graph = GRAPH_FILE,
         vogs=lambda w: VOG_ANNOT if config["hmmsearch"] else "",
@@ -28,7 +28,7 @@ rule run_reneo:
         hmmscore = HS,
         covtol = CT,
         alpha = AL,
-        output = OUTDIR,
+        output = RESDIR,
         # nthreads = config["resources"]["big"]["cpu"],
         log = os.path.join(LOGSDIR, "reneo_output.log")
     threads:

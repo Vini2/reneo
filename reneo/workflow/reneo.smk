@@ -12,12 +12,12 @@ configfile: os.path.join(workflow.basedir, "..", "config", "databases.yaml")
 
 
 """PREFLIGHT CHECKS"""
-include: os.path.join("rules", "00_database_preflight.smk")
-include: os.path.join("rules", "02_reneo_preflight.smk")
+include: os.path.join("rules", "databases.smk")
+include: os.path.join("rules", "preflight.smk")
 
 
 """TARGETS"""
-include: os.path.join("rules", "02_reneo_targets.smk")
+include: os.path.join("rules", "targets.smk")
 
 
 """Target rules"""

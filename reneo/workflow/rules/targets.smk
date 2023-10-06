@@ -5,11 +5,12 @@ postprocessTargets = []
 
 
 """MISC"""
-COVERAGE_FILE = os.path.join(OUTDIR, 'results', 'reneo.coverage.tsv')
+COVERAGE_FILE = os.path.join(RESDIR, 'reneo.coverage.tsv')
 VOG_ANNOT = os.path.join(OUTDIR, 'all.hmmVOG.tbl')
 SMG_FILE = os.path.join(OUTDIR, 'edges.fasta.hmmout')
 GRAPH_FILE = INPUT
 PICKLE_FILE = os.path.join(OUTDIR, "PE_junctions.pkl")
+
 
 """PREPROCESSING TARGETS"""
 EDGES_FILE = os.path.join(OUTDIR, "edges.fasta")
@@ -20,7 +21,6 @@ preprocessTargets.append(expand(os.path.join(BAM_PATH, "{sample}.bam"), sample=S
 preprocessTargets.append(expand(os.path.join(BAM_PATH, "{sample}.bam.bai"), sample=SAMPLE_NAMES))
 
 COVERAGE_PATH = os.path.join(OUTDIR, 'coverage_rpkm/')
-# preprocessTargets.append(expand(os.path.join(COVERAGE_PATH, "{sample}_rpkm.tsv"), sample=SAMPLE_NAMES))
 preprocessTargets.append(COVERAGE_FILE)
 if config["hmmsearch"]:
     preprocessTargets.append(SMG_FILE)
@@ -28,21 +28,21 @@ if config["hmmsearch"]:
 
 
 """PHABLES TARGETS"""
-RESOLVED_GENOMES = os.path.join(OUTDIR, "resolved_paths.fasta")
+RESOLVED_GENOMES = os.path.join(RESDIR, "resolved_paths.fasta")
 
-RESOLVED_GENOME_INFO = os.path.join(OUTDIR, "resolved_genome_info.txt")
+RESOLVED_GENOME_INFO = os.path.join(RESDIR, "resolved_genome_info.txt")
 reneoTargets.append(RESOLVED_GENOME_INFO)
 
-RESOLVED_COMP_INFO = os.path.join(OUTDIR, "resolved_component_info.txt")
+RESOLVED_COMP_INFO = os.path.join(RESDIR, "resolved_component_info.txt")
 reneoTargets.append(RESOLVED_COMP_INFO)
 
-COMP_VOGS = os.path.join(OUTDIR, "component_vogs.txt")
+COMP_VOGS = os.path.join(RESDIR, "component_vogs.txt")
 reneoTargets.append(COMP_VOGS)
 
 
 """POSTPROCESSING TARGETS"""
-GENOME_KOVERAGE_RES = os.path.join(OUTDIR, "results", "sample_coverage.tsv")
+GENOME_KOVERAGE_RES = os.path.join(RESDIR, "sample_coverage.tsv")
 postprocessTargets.append(GENOME_KOVERAGE_RES)
 
-GENOME_READ_COUNTS = os.path.join(OUTDIR, "sample_genome_read_counts.tsv")
+GENOME_READ_COUNTS = os.path.join(RESDIR, "sample_genome_read_counts.tsv")
 postprocessTargets.append(GENOME_READ_COUNTS)
