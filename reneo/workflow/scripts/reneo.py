@@ -88,7 +88,10 @@ def merge_results(orig_res, new_res):
 def worker_resolve_components(component_queue, results_queue, **kwargs):
     results = results_dict()
 
-    for my_count in tqdm(kwargs["pruned_vs"], desc="Resolving components"):
+    while True:
+        my_count = component_queue.get()
+        if my_count is None:
+            break
 
         component_time_start = time.time()
         my_genomic_paths = []
@@ -1251,7 +1254,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
         kwargs["logger"].debug(f"Unresolved edges in comp {my_count}: {unresolved_edges}")
 
         # Add the paths for writing
-        results["genome_path_sets"].add(final_genomic_paths)
+        results["genome_path_sets"].add(tuple(final_genomic_paths))
+
+    results_queue.put(results)
 
 
 def main(**kwargs):
@@ -1332,8 +1337,8 @@ def main(**kwargs):
     # ----------------------------------------------------------------------
     kwargs["logger"].info("Getting unitig coverage")
     kwargs["unitig_coverages"] = get_unitig_coverage(kwargs["coverage"])
-    kwargs["logger"].info("Getting junction pe coverage")
 
+    kwargs["logger"].info("Getting junction pe coverage")
     with open(kwargs["pickle_file"], "rb") as handle:
         kwargs["junction_pe_coverage"] = pickle.load(handle)
 
@@ -1352,7 +1357,10 @@ def main(**kwargs):
     # Set up multithreading
     worker_threads = []
     for _ in range(kwargs["nthreads"]):
-        t = threading.Thread(target=worker_resolve_components, args=(component_queue, results_queue,), kwargs=kwargs)
+        t = threading.Thread(
+            target=worker_resolve_components,
+            args=(component_queue, results_queue,),
+            kwargs=kwargs)
         t.start()
         worker_threads.append(t)
 
@@ -1367,7 +1375,7 @@ def main(**kwargs):
         r = results_queue.get()  # Dequeue (get and remove) the element from the front of the queue
         results = merge_results(results, r)
 
-
+    # write all the final genomic paths
     for final_genomic_paths in results["genome_path_sets"]:
         write_path(final_genomic_paths, kwargs["output"])
         # write_path_fasta(final_genomic_paths, f"{kwargs['output']}/resolved_viruses")
