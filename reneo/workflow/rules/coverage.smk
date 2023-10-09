@@ -23,6 +23,7 @@ rule koverage:
     params:
         out_dir = OUTDIR,
         profile = lambda wildcards: "--profile " + config["profile"] if config["profile"] else "",
+        configfile = config["configfile"]
     output:
         expand(os.path.join(OUTDIR, "temp", "{sample}.{ext}"),
                sample=SAMPLE_NAMES,
@@ -43,6 +44,7 @@ rule koverage:
             --ref {input.edges} \
             --threads {threads} \
             --output {params.out_dir} \
+            --configfile {params.configfile} \
             {params.profile}
         """
 

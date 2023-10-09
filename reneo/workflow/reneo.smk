@@ -9,6 +9,7 @@ This is the main Snakefile to run reneo.
 """CONFIGURATION"""
 configfile: os.path.join(workflow.basedir, "..", "config", "config.yaml")
 configfile: os.path.join(workflow.basedir, "..", "config", "databases.yaml")
+config.update(config["reneo"])
 
 
 """PREFLIGHT CHECKS"""
