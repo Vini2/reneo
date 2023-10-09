@@ -8,16 +8,30 @@ https://github.com/beardymcjohnface/Snaketool/wiki/Customising-your-Snaketool
 import os
 import click
 
-from .util import (
-    snake_base,
-    get_version,
-    default_to_output,
-    copy_config,
-    run_snakemake,
-    OrderedCommands,
-    print_citation,
-    tuple_to_list,
-)
+from snaketool_utils.cli_utils import OrderedCommands, run_snakemake, copy_config, echo_click
+
+
+def snake_base(rel_path):
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), rel_path)
+
+
+def get_version():
+    with open(snake_base("reneo.VERSION"), "r") as f:
+        version = f.readline()
+    return version
+
+
+def print_citation():
+    with open(snake_base("reneo.CITATION"), "r") as f:
+        for line in f:
+            echo_click(line)
+
+
+def default_to_output(ctx, param, value):
+    """Callback for click options; places value in output directory unless specified"""
+    if param.default == value:
+        return os.path.join(ctx.params["output"], value)
+    return value
 
 
 def common_options(func):
@@ -77,6 +91,12 @@ def common_options(func):
             default="reneo.log",
             callback=default_to_output,
             hidden=True,
+        ),
+        click.option(
+            "--system_config",
+            default=snake_base(os.path.join("config", "config.yaml")),
+            hidden=True,
+            type=click.Path(),
         ),
         click.argument("snake_args", nargs=-1),
     ]
@@ -222,7 +242,9 @@ Available targets:
 def run(**kwargs):
     """Run Reneo"""
     # Config to add or update in configfile
-    merge_config = tuple_to_list(kwargs)
+    merge_config = {
+        "reneo": kwargs
+    }
 
     # run!
     run_snakemake(
