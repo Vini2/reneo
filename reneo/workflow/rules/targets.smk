@@ -29,6 +29,7 @@ if config["hmmsearch"]:
 
 """PHABLES TARGETS"""
 RESOLVED_GENOMES = os.path.join(RESDIR, "resolved_paths.fasta")
+reneoTargets.append(RESOLVED_GENOMES)
 
 RESOLVED_GENOME_INFO = os.path.join(RESDIR, "resolved_genome_info.txt")
 reneoTargets.append(RESOLVED_GENOME_INFO)
