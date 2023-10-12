@@ -22,6 +22,7 @@ def test_cli():
     exec_command("reneo -v")
     exec_command("reneo -h")
     exec_command("reneo run -h")
+    exec_command("reneo simulate -h")
     exec_command("reneo test -h")
     exec_command("reneo install -h")
     exec_command("reneo config -h")
@@ -29,5 +30,5 @@ def test_cli():
 
 
 def test_reneo_pipelines():
-    exec_command("reneo test -n")
+    exec_command("reneo simulate")
     exec_command("reneo config")

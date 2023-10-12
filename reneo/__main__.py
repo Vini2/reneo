@@ -190,6 +190,12 @@ def run_options(func):
             show_default=True,
         ),
         click.option(
+            "--databases",
+            default=None,
+            show_default=False,
+            help="Custom DB location",
+        ),
+        click.option(
             "--hmmsearch/--no-hmmsearch",
             default=True,
             help="Perform or skip HMM searches",
@@ -292,8 +298,33 @@ def run(**kwargs):
 )
 @run_options
 @common_options
+def simulate(**kwargs):
+    """Simulate Reneo run"""
+
+    kwargs["input"] = snake_base(os.path.join("test_data", "assemblyGraph.gfa"))
+    kwargs["reads"] = snake_base(os.path.join("test_data", "reads"))
+    kwargs["databases"] = snake_base(os.path.join("test_data"))
+    kwargs["snake_default"] = ["-n"]
+
+    merge_config = {"reneo": kwargs}
+
+    run_snakemake(
+        snakefile_path=snake_base(os.path.join("workflow", "reneo.smk")),
+        merge_config=merge_config,
+        **kwargs
+    )
+
+
+@click.command(
+    epilog=help_msg_extra,
+    context_settings=dict(
+        help_option_names=["-h", "--help"], ignore_unknown_options=True
+    ),
+)
+@run_options
+@common_options
 def test(**kwargs):
-    """Run Reneo using test dataset"""
+    """Run Reneo with test dataset"""
 
     kwargs["input"] = snake_base(os.path.join("test_data", "assemblyGraph.gfa"))
     kwargs["reads"] = snake_base(os.path.join("test_data", "reads"))
@@ -337,6 +368,7 @@ def citation(**kwargs):
 
 
 cli.add_command(run)
+cli.add_command(simulate)
 cli.add_command(test)
 cli.add_command(install)
 cli.add_command(config)
