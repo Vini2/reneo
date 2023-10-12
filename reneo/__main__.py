@@ -61,7 +61,7 @@ def common_options(func):
             help="Custom config file [default: (outputDir)/config.yaml]",
         ),
         click.option(
-            "--threads", help="Number of threads to use", default=1, show_default=True
+            "--threads", help="Number of threads to use", default=8, show_default=True
         ),
         click.option(
             "--use-conda/--no-use-conda",
@@ -117,18 +117,6 @@ def run_options(func):
     """Reneo run-specific options"""
 
     options = [
-        click.option(
-            "--input",
-            help="Path to assembly graph file in .GFA format",
-            type=click.Path(),
-            required=True,
-        ),
-        click.option(
-            "--reads",
-            help="Path to directory or TSV containing paired-end reads",
-            type=click.Path(exists=True),
-            required=True,
-        ),
         click.option(
             "--minlength",
             default=1000,
@@ -270,10 +258,45 @@ Available targets:
         help_option_names=["-h", "--help"], ignore_unknown_options=True
     ),
 )
+@click.option(
+    "--input",
+    help="Path to assembly graph file in .GFA format",
+    type=click.Path(),
+    required=True,
+)
+@click.option(
+    "--reads",
+    help="Path to directory or TSV containing paired-end reads",
+    type=click.Path(exists=True),
+    required=True,
+)
 @run_options
 @common_options
 def run(**kwargs):
     """Run Reneo"""
+
+    merge_config = {"reneo": kwargs}
+
+    run_snakemake(
+        snakefile_path=snake_base(os.path.join("workflow", "reneo.smk")),
+        merge_config=merge_config,
+        **kwargs
+    )
+
+
+@click.command(
+    epilog=help_msg_extra,
+    context_settings=dict(
+        help_option_names=["-h", "--help"], ignore_unknown_options=True
+    ),
+)
+@run_options
+@common_options
+def test(**kwargs):
+    """Run Reneo using test dataset"""
+
+    kwargs["input"] = snake_base(os.path.join("test_data", "assemblyGraph.gfa"))
+    kwargs["reads"] = snake_base(os.path.join("test_data", "reads"))
 
     merge_config = {"reneo": kwargs}
 
@@ -314,6 +337,7 @@ def citation(**kwargs):
 
 
 cli.add_command(run)
+cli.add_command(test)
 cli.add_command(install)
 cli.add_command(config)
 cli.add_command(citation)
