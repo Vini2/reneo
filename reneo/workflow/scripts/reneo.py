@@ -1547,13 +1547,14 @@ def main(**kwargs):
             "all_virus_like_edges",
             kwargs["output"],
         )
-        write_unitigs(
-            results["unresolved_virus_like_edges"],
-            kwargs["unitig_names"],
-            kwargs["graph_unitigs"],
-            "unresolved_virus_like_edges",
-            kwargs["output"],
-        )
+
+    write_unitigs(
+        results["unresolved_virus_like_edges"],
+        kwargs["unitig_names"],
+        kwargs["graph_unitigs"],
+        "unresolved_virus_like_edges",
+        kwargs["output"],
+    )
 
     write_unitigs(
         results["resolved_edges"],
