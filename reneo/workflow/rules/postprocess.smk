@@ -38,26 +38,3 @@ rule koverage_genomes:
             --output {params.out_dir} \
             {params.profile}
         """
-
-
-rule koverage_postprocess:
-    """Format TSV of samples and reads from Koverage"""
-    input:
-        koverage_tsv = os.path.join(RESDIR, "sample_coverage.tsv"),
-        samples_file = os.path.join(OUTDIR, "reneo.samples.tsv"),
-        seq_file = os.path.join(RESDIR, "genomes_and_unresolved_edges.fasta")
-    output:
-        os.path.join(RESDIR, "sample_genome_read_counts.tsv")
-    params:
-        koverage_tsv = os.path.join(RESDIR, "sample_coverage.tsv"),
-        samples_file = os.path.join(OUTDIR, "reneo.samples.tsv"),
-        seq_file = os.path.join(OUTDIR, "genomes_and_unresolved_edges.fasta"),
-        info_file = os.path.join(OUTDIR, "genomes_and_unresolved_edges_info.tsv"),
-        output_path = RESDIR,
-        log = os.path.join(LOGSDIR, "format_koverage_results_output.log")
-    log:
-        os.path.join(LOGSDIR, "format_koverage_results_output.log")
-    conda:
-        os.path.join("..", "envs", "reneo.yaml")
-    script:
-        os.path.join("..", "scripts", "format_koverage_results.py")

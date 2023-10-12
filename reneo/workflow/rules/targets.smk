@@ -5,23 +5,23 @@ postprocessTargets = []
 
 
 """MISC"""
-COVERAGE_FILE = os.path.join(RESDIR, 'reneo.coverage.tsv')
-VOG_ANNOT = os.path.join(OUTDIR, 'all.hmmVOG.tbl')
-SMG_FILE = os.path.join(OUTDIR, 'edges.fasta.hmmout')
-GRAPH_FILE = INPUT
-PICKLE_FILE = os.path.join(OUTDIR, "PE_junctions.pkl")
+GRAPH_FILE = config['input']
+PICKLE_FILE = os.path.join(TMPDIR, "PE_junctions.pkl")
 
 
 """PREPROCESSING TARGETS"""
-EDGES_FILE = os.path.join(OUTDIR, "edges.fasta")
+EDGES_FILE = os.path.join(TMPDIR, "edges.fasta")
 preprocessTargets.append(EDGES_FILE)
 
-BAM_PATH = os.path.join(OUTDIR, 'temp')
+BAM_PATH = os.path.join(OUTDIR, 'bams')
 preprocessTargets.append(expand(os.path.join(BAM_PATH, "{sample}.bam"), sample=SAMPLE_NAMES))
 preprocessTargets.append(expand(os.path.join(BAM_PATH, "{sample}.bam.bai"), sample=SAMPLE_NAMES))
 
-COVERAGE_PATH = os.path.join(OUTDIR, 'coverage_rpkm/')
+COVERAGE_FILE = os.path.join(RESDIR, 'reneo.coverage.tsv')
 preprocessTargets.append(COVERAGE_FILE)
+
+VOG_ANNOT = os.path.join(TMPDIR, 'all.hmmVOG.tbl')
+SMG_FILE = os.path.join(TMPDIR, 'edges.fasta.hmmout')
 if config["hmmsearch"]:
     preprocessTargets.append(SMG_FILE)
     preprocessTargets.append(VOG_ANNOT)

@@ -6,44 +6,22 @@ This preflight check to confirm the database filepaths
 
 from metasnek import fastq_finder
 
+
 """
 Setting the directory variables
 """
-
-# THREADS = config['threads']
-INPUT = config['input']
 OUTDIR = config['output']
+TMPDIR = os.path.join(OUTDIR, "temp")
 RESDIR = os.path.join(config['output'], "results")
-print(f"Output files will be saved to directory, {RESDIR}\n")
+LOGSDIR = os.path.join(OUTDIR, 'logs')
+BENCH = os.path.join(OUTDIR, 'benchmarks')
 
 
-############################################################################
-# Checking through the reads folder
-############################################################################
-
+"""
+Parse the samples
+"""
 SAMPLE_READS = dict(sorted(fastq_finder.parse_samples_to_dictionary(config['reads']).items()))
 SAMPLE_NAMES = list(SAMPLE_READS.keys())
-
-
-############################################################################
-# Get Reneo parameters
-############################################################################
-ML = config['minlength']
-MC = config['mincov']
-CC = config['compcount']
-MP = config['maxpaths']
-MGF = config['mgfrac']
-EV = config['evalue']
-HS = config['hmmscore']
-CT = config['covtol']
-AL = config['alpha']
-
-
-"""DIRECTORIES/FILES etc.
-Declare some directories for pipeline intermediates and outputs.
-"""
-LOGSDIR = os.path.join(OUTDIR, 'logs')
-BENCH = os.path.join(OUTDIR, 'bench')
 
 
 """ONSTART/END/ERROR

@@ -17,18 +17,14 @@ __status__ = "Development"
 
 def setup_logging(**kwargs):
     """Setup logging"""
-    logger = logging.getLogger(__version__)
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(
+        filename=kwargs["log"],
+        level=logging.DEBUG,
+        format="%(asctime)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     logging.captureWarnings(True)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    consoleHeader = logging.StreamHandler()
-    consoleHeader.setFormatter(formatter)
-    consoleHeader.setLevel(logging.INFO)
-    logger.addHandler(consoleHeader)
-    fileHandler = logging.FileHandler(kwargs["log"])
-    fileHandler.setLevel(logging.DEBUG)
-    fileHandler.setFormatter(formatter)
-    logger.addHandler(fileHandler)
+    logger = logging.getLogger(__version__)
     return logger
 
 
@@ -70,5 +66,5 @@ if __name__ == "__main__":
         bam=snakemake.input.bam,
         out=snakemake.output.pkl,
         smpl=snakemake.wildcards.sample,
-        log=snakemake.log.err
+        log=snakemake.log.stderr,
     )

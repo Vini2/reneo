@@ -159,5 +159,5 @@ def init_files(output):
     open(f"{output}/resolved_component_info.txt", "a").close()
     open(f"{output}/component_vogs.txt", "a").close()
 
-    if not os.path.isdir(f"{output}/resolved_paths"):
-        subprocess.run(f"mkdir -p {output}/resolved_paths", shell=True)
+    # if not os.path.isdir(f"{output}/resolved_paths"):
+    #     subprocess.run(f"mkdir -p {output}/resolved_paths", shell=True)

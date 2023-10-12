@@ -6,11 +6,11 @@ import time
 import pickle
 import threading
 import queue
-
 import networkx as nx
 from igraph import *
+
 from reneo_utils import component_utils, edge_graph_utils, flow_utils, gene_utils
-from reneo_utils.coverage_utils import get_junction_pe_coverage, get_unitig_coverage
+from reneo_utils.coverage_utils import get_unitig_coverage
 from reneo_utils.genome_utils import GenomeComponent, GenomePath
 from reneo_utils.output_utils import (
     init_files,
@@ -21,7 +21,7 @@ from reneo_utils.output_utils import (
     write_res_genome_info,
     write_unitigs,
 )
-from tqdm import tqdm
+
 
 __author__ = "Vijini Mallawaarachchi"
 __copyright__ = "Copyright 2022, Reneo Project"
@@ -33,21 +33,14 @@ __status__ = "Development"
 
 
 def setup_logging(**kwargs):
-    logger = logging.getLogger(__version__)
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(
+        filename=kwargs["log"],
+        level=logging.DEBUG,
+        format="%(asctime)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     logging.captureWarnings(True)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    consoleHeader = logging.StreamHandler()
-    consoleHeader.setFormatter(formatter)
-    consoleHeader.setLevel(logging.INFO)
-    logger.addHandler(consoleHeader)
-    if kwargs["log"] is None:
-        fileHandler = logging.FileHandler(f"{kwargs['output']}/reneo.log")
-    else:
-        fileHandler = logging.FileHandler(f"{kwargs['log']}")
-    fileHandler.setLevel(logging.DEBUG)
-    fileHandler.setFormatter(formatter)
-    logger.addHandler(fileHandler)
+    logger = logging.getLogger(__version__)
     return logger
 
 
@@ -70,7 +63,6 @@ def results_dict():
         "case3_resolved": set(),
         "virus_like_edges": set(),
         "all_virus_like_edges": set(),
-        "unresolved_virus_like_edges": set(),
         "genome_path_sets": set(),
     }
     return results
@@ -99,7 +91,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
         candidate_nodes = kwargs["pruned_vs"][my_count]
         pruned_graph = kwargs["assembly_graph"].subgraph(candidate_nodes)
         has_cycles = False
-        results["all_virus_like_edges"] = results["all_virus_like_edges"].union(set(candidate_nodes))
+        results["all_virus_like_edges"] = results["all_virus_like_edges"].union(
+            set(candidate_nodes)
+        )
         comp_all_edges = set(set(candidate_nodes))
         comp_resolved_edges = set()
 
@@ -123,7 +117,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                 results["cycle_components"].add(my_count)
 
-                results['virus_like_edges'] = results['virus_like_edges'].union(set(candidate_nodes))
+                results["virus_like_edges"] = results["virus_like_edges"].union(
+                    set(candidate_nodes)
+                )
                 comp_resolved_edges = comp_resolved_edges.union(set(candidate_nodes))
 
                 unitig1 = ""
@@ -155,7 +151,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         unitig_name = unitig1_name
                         repeat_unitig = unitig2
                         repeat_unitig_name = unitig2_name
-                    elif unitig2_len > unitig1_len and unitig2_len > kwargs["minlength"]:
+                    elif (
+                        unitig2_len > unitig1_len and unitig2_len > kwargs["minlength"]
+                    ):
                         unitig_to_consider = unitig2
                         unitig_name = unitig2_name
                         repeat_unitig = unitig1
@@ -166,20 +164,24 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                             f"Case 2 component: {unitig1_name} is {unitig1_len} bp long and {unitig2_name} is {unitig2_len} bp long."
                         )
                         cycle_number = 1
-                        results['resolved_edges'].add(unitig_to_consider)
-                        results['resolved_edges'].add(repeat_unitig)
+                        results["resolved_edges"].add(unitig_to_consider)
+                        results["resolved_edges"].add(repeat_unitig)
                         path_string = (
-                                str(kwargs["graph_unitigs"][repeat_unitig_name])
-                                + str(
-                            kwargs["graph_unitigs"][unitig_name][
-                            kwargs["link_overlap"][(repeat_unitig, unitig_to_consider)]:
-                            ]
-                        )
-                                + str(
-                            kwargs["graph_unitigs"][repeat_unitig_name][
-                            kwargs["link_overlap"][(unitig_to_consider, repeat_unitig)]:
-                            ]
-                        )
+                            str(kwargs["graph_unitigs"][repeat_unitig_name])
+                            + str(
+                                kwargs["graph_unitigs"][unitig_name][
+                                    kwargs["link_overlap"][
+                                        (repeat_unitig, unitig_to_consider)
+                                    ] :
+                                ]
+                            )
+                            + str(
+                                kwargs["graph_unitigs"][repeat_unitig_name][
+                                    kwargs["link_overlap"][
+                                        (unitig_to_consider, repeat_unitig)
+                                    ] :
+                                ]
+                            )
                         )
                         kwargs["logger"].debug(
                             f"Terminal repeat detected is {repeat_unitig_name}"
@@ -202,9 +204,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                             * 100,
                         )
                         my_genomic_paths.append(genome_path)
-                        results['resolved_components'].add(my_count)
-                        results['resolved_cyclic'].add(my_count)
-                        results['case2_resolved'].add(my_count)
+                        results["resolved_components"].add(my_count)
+                        results["resolved_cyclic"].add(my_count)
+                        results["case2_resolved"].add(my_count)
 
         # Case 3 components
         elif len(candidate_nodes) > 2 and len(candidate_nodes) <= kwargs["compcount"]:
@@ -228,8 +230,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                 # Find the maximum coverage within the component
                 if (
-                        unitig_name in kwargs["unitig_coverages"]
-                        and kwargs["unitig_coverages"][unitig_name] > max_comp_cov
+                    unitig_name in kwargs["unitig_coverages"]
+                    and kwargs["unitig_coverages"][unitig_name] > max_comp_cov
                 ):
                     max_comp_cov = kwargs["unitig_coverages"][unitig_name]
 
@@ -240,7 +242,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     consider_edge = False
 
                     if not (
-                            unitig_name in kwargs["self_looped_nodes"] and node in kwargs["self_looped_nodes"]
+                        unitig_name in kwargs["self_looped_nodes"]
+                        and node in kwargs["self_looped_nodes"]
                     ):
                         consider_edge = True
 
@@ -269,7 +272,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 G_edge.add_edge(cedge[0], cedge[1], weight=cycle_edges[cedge])
 
             two_comp = sorted(nx.weakly_connected_components(G_edge), key=len)
-            kwargs["logger"].debug(f"No. of weakly connected components: {len(two_comp)}")
+            kwargs["logger"].debug(
+                f"No. of weakly connected components: {len(two_comp)}"
+            )
 
             if len(two_comp) >= 2:
                 G_edge.remove_nodes_from(list(two_comp[0]))
@@ -298,16 +303,19 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                     G_edge.remove_nodes_from(dead_ends_to_remove)
 
-                    kwargs["logger"].debug(f"Dead-ends found and removed: {dead_ends_to_remove}")
+                    kwargs["logger"].debug(
+                        f"Dead-ends found and removed: {dead_ends_to_remove}"
+                    )
 
                 # Identify source/sink vertex
                 # ----------------------------------------------------------------------
 
                 source_sink_candidates = flow_utils.get_source_sink_circular(
-                    G_edge, kwargs["graph_unitigs"], kwargs["minlength"], kwargs["self_looped_nodes"]
+                    G_edge,
+                    kwargs["graph_unitigs"],
+                    kwargs["minlength"],
+                    kwargs["self_looped_nodes"],
                 )
-
-                source_sink = 0
 
                 kwargs["logger"].debug(f"Original candidate_nodes: {candidate_nodes}")
                 kwargs["logger"].debug(
@@ -331,7 +339,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                     candidate_nodes.remove(source_sink)
                     candidate_nodes.insert(0, source_sink)
-                    kwargs["logger"].debug(f"Ordered candidate_nodes: {candidate_nodes}")
+                    kwargs["logger"].debug(
+                        f"Ordered candidate_nodes: {candidate_nodes}"
+                    )
 
                 else:
                     kwargs["logger"].debug(f"No source/sink node detected")
@@ -366,7 +376,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                             [
                                 x
                                 for x in G.predecessors(node)
-                                if node_indices_rev[x][:-1] not in kwargs["self_looped_nodes"]
+                                if node_indices_rev[x][:-1]
+                                not in kwargs["self_looped_nodes"]
                             ]
                         )
                         in_degree.append(clean_indegree)
@@ -375,7 +386,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                             [
                                 x
                                 for x in G.successors(node)
-                                if node_indices_rev[x][:-1] not in kwargs["self_looped_nodes"]
+                                if node_indices_rev[x][:-1]
+                                not in kwargs["self_looped_nodes"]
                             ]
                         )
                         out_degree.append(clean_outdegree)
@@ -420,8 +432,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         final_vertex = v_index
 
                     if (u_index, final_vertex) not in visited_edges and (
-                            final_vertex,
-                            u_index,
+                        final_vertex,
+                        u_index,
                     ) not in visited_edges:
                         # Get coverage interval
                         cov_lower_bound = cov["weight"]
@@ -449,7 +461,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                         # Add subpaths
                         if juction_cov >= kwargs["mincov"]:
-                            kwargs["logger"].debug(f"Adding subpath {[u_index, final_vertex]}")
+                            kwargs["logger"].debug(
+                                f"Adding subpath {[u_index, final_vertex]}"
+                            )
                             subpaths[subpath_count] = [u_index, final_vertex]
                             subpath_count += 1
 
@@ -465,13 +479,13 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 u_cov = kwargs["unitig_coverages"][u[:-1]]
 
                                 if (
-                                        final_vertex != 0
-                                        and u_index != 0
-                                        and u_pred_index != final_vertex
+                                    final_vertex != 0
+                                    and u_index != 0
+                                    and u_pred_index != final_vertex
                                 ):
                                     if (
-                                            abs(min(u_pred_cov, u_cov) - cov["weight"])
-                                            < kwargs["covtol"]
+                                        abs(min(u_pred_cov, u_cov) - cov["weight"])
+                                        < kwargs["covtol"]
                                     ):
                                         subpaths[subpath_count] = [
                                             u_pred_index,
@@ -491,15 +505,15 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 v_cov = kwargs["unitig_coverages"][v[:-1]]
 
                                 if (
-                                        v_succ_index != 0
-                                        and u_index != 0
-                                        and final_vertex != 0
-                                        and final_vertex != len(candidate_nodes)
-                                        and v_succ_index != u_index
+                                    v_succ_index != 0
+                                    and u_index != 0
+                                    and final_vertex != 0
+                                    and final_vertex != len(candidate_nodes)
+                                    and v_succ_index != u_index
                                 ):
                                     if (
-                                            abs(min(v_succ_cov, v_cov) - cov["weight"])
-                                            < kwargs["covtol"]
+                                        abs(min(v_succ_cov, v_cov) - cov["weight"])
+                                        < kwargs["covtol"]
                                     ):
                                         subpaths[subpath_count] = [
                                             u_index,
@@ -518,13 +532,20 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                             # v_succ = [x for x in G_edge.successors(v)]
 
                             for u_pred in G_edge.predecessors(u):
-                                if kwargs["junction_pe_coverage"][(u_pred[:-1], v[:-1])] > 0:
-                                    u_pred_name = kwargs["unitig_names_rev"][u_pred[:-1]]
+                                if (
+                                    kwargs["junction_pe_coverage"][
+                                        (u_pred[:-1], v[:-1])
+                                    ]
+                                    > 0
+                                ):
+                                    u_pred_name = kwargs["unitig_names_rev"][
+                                        u_pred[:-1]
+                                    ]
                                     u_pred_index = candidate_nodes.index(u_pred_name)
                                     if (
-                                            final_vertex != 0
-                                            and u_index != 0
-                                            and u_pred_index != final_vertex
+                                        final_vertex != 0
+                                        and u_index != 0
+                                        and u_pred_index != final_vertex
                                     ):
                                         subpaths[subpath_count] = [
                                             u_pred_index,
@@ -537,15 +558,22 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                         subpath_count += 1
 
                             for v_succ in G_edge.successors(v):
-                                if kwargs["junction_pe_coverage"][(u[:-1], v_succ[:-1])] > 0:
-                                    v_succ_name = kwargs["unitig_names_rev"][v_succ[:-1]]
+                                if (
+                                    kwargs["junction_pe_coverage"][
+                                        (u[:-1], v_succ[:-1])
+                                    ]
+                                    > 0
+                                ):
+                                    v_succ_name = kwargs["unitig_names_rev"][
+                                        v_succ[:-1]
+                                    ]
                                     v_succ_index = candidate_nodes.index(v_succ_name)
                                     if (
-                                            v_succ_index != 0
-                                            and u_index != 0
-                                            and final_vertex != 0
-                                            and final_vertex != len(candidate_nodes)
-                                            and v_succ_index != u_index
+                                        v_succ_index != 0
+                                        and u_index != 0
+                                        and final_vertex != 0
+                                        and final_vertex != len(candidate_nodes)
+                                        and v_succ_index != u_index
                                     ):
                                         subpaths[subpath_count] = [
                                             u_index,
@@ -568,16 +596,18 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     "subpaths": subpaths,
                 }
                 kwargs["logger"].debug(f"G_mfd: {G_mfd}")
-                solution_paths = flow_utils.solve_mfd(G_mfd, kwargs["maxpaths"], kwargs["output"], kwargs["nthreads"])
+                solution_paths = flow_utils.solve_mfd(
+                    G_mfd, kwargs["maxpaths"], kwargs["nthreads"]
+                )
                 kwargs["logger"].debug(f"Number of paths found: {len(solution_paths)}")
 
                 results["cycle_components"].add(my_count)
-                results['case3_found'].add(my_count)
+                results["case3_found"].add(my_count)
 
                 # Iterate through solution paths
                 # ----------------------------------------------------------------------
                 if len(solution_paths) != 0:
-                    results['virus_like_edges'] = results['virus_like_edges'].union(
+                    results["virus_like_edges"] = results["virus_like_edges"].union(
                         set(original_candidate_nodes)
                     )
 
@@ -623,7 +653,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                     edge_list_indices[path_edge]
                                                 )
 
-                                        kwargs["logger"].debug(f"path_order: {path_order}")
+                                        kwargs["logger"].debug(
+                                            f"path_order: {path_order}"
+                                        )
 
                                         # Get the order of unitigs in path
                                         path_string = ""
@@ -653,10 +685,10 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                                             else:
                                                 trimmed_seq = unitig_seq[
-                                                              kwargs["link_overlap"][
-                                                                  (previous_edge, node)
-                                                              ]:
-                                                              ]
+                                                    kwargs["link_overlap"][
+                                                        (previous_edge, node)
+                                                    ] :
+                                                ]
                                                 path_string += trimmed_seq
                                                 total_length += len(trimmed_seq)
 
@@ -675,14 +707,16 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             int(coverage_val),
                                             total_length,
                                             (
-                                                    path_string.count("G")
-                                                    + path_string.count("C")
+                                                path_string.count("G")
+                                                + path_string.count("C")
                                             )
                                             / len(path_string)
                                             * 100,
                                         )
                                         my_genomic_paths.append(genome_path)
-                                        kwargs["logger"].debug(f"total_length: {total_length}")
+                                        kwargs["logger"].debug(
+                                            f"total_length: {total_length}"
+                                        )
 
                                         cycle_number += 1
 
@@ -691,21 +725,25 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                         f"Could not resolve a continuous path."
                                     )
 
-                    kwargs["logger"].debug(f"Number of paths selected: {cycle_number - 1}")
+                    kwargs["logger"].debug(
+                        f"Number of paths selected: {cycle_number - 1}"
+                    )
 
                     if cycle_number > 1:
-                        results['resolved_components'].add(my_count)
-                        results['resolved_cyclic'].add(my_count)
-                        results['case3_resolved'].add(my_count)
+                        results["resolved_components"].add(my_count)
+                        results["resolved_cyclic"].add(my_count)
+                        results["case3_resolved"].add(my_count)
 
                 else:
                     kwargs["logger"].debug(f"No paths detected")
                     continue
 
             else:
-                kwargs["logger"].debug(f"No cycles detected. Found a complex linear component.")
+                kwargs["logger"].debug(
+                    f"No cycles detected. Found a complex linear component."
+                )
 
-                results['linear_components'].add(my_count)
+                results["linear_components"].add(my_count)
 
                 # Identify source/sink vertex
                 # ----------------------------------------------------------------------
@@ -715,7 +753,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 )
 
                 kwargs["logger"].debug(f"Original candidate_nodes: {candidate_nodes}")
-                kwargs["logger"].debug(f"Identified candidate sources: {source_candidates}")
+                kwargs["logger"].debug(
+                    f"Identified candidate sources: {source_candidates}"
+                )
                 kwargs["logger"].debug(f"Identified candidate sinks: {sink_candidates}")
 
                 if len(source_candidates) == 1 and len(sink_candidates) == 1:
@@ -730,7 +770,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     candidate_nodes.remove(sink_node)
                     candidate_nodes.append(sink_node)
 
-                    kwargs["logger"].debug(f"Ordered candidate_nodes: {candidate_nodes}")
+                    kwargs["logger"].debug(
+                        f"Ordered candidate_nodes: {candidate_nodes}"
+                    )
 
                     # Create refined directed graph for flow network
                     # ----------------------------------------------------------------------
@@ -758,12 +800,16 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     out_degree = []
 
                     for node in list(G.nodes):
-                        if node_indices_rev[node][:-1] not in kwargs["self_looped_nodes"]:
+                        if (
+                            node_indices_rev[node][:-1]
+                            not in kwargs["self_looped_nodes"]
+                        ):
                             clean_indegree = len(
                                 [
                                     x
                                     for x in G.predecessors(node)
-                                    if node_indices_rev[x][:-1] not in kwargs["self_looped_nodes"]
+                                    if node_indices_rev[x][:-1]
+                                    not in kwargs["self_looped_nodes"]
                                 ]
                             )
                             in_degree.append(clean_indegree)
@@ -772,7 +818,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 [
                                     x
                                     for x in G.successors(node)
-                                    if node_indices_rev[x][:-1] not in kwargs["self_looped_nodes"]
+                                    if node_indices_rev[x][:-1]
+                                    not in kwargs["self_looped_nodes"]
                                 ]
                             )
                             out_degree.append(clean_outdegree)
@@ -812,8 +859,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         juction_cov = kwargs["junction_pe_coverage"][(u[:-1], v[:-1])]
 
                         if (u_index, v_index) not in visited_edges and (
-                                v_index,
-                                u_index,
+                            v_index,
+                            u_index,
                         ) not in visited_edges:
                             # Get coverage interval
                             cov_lower_bound = cov["weight"]
@@ -841,29 +888,33 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                             # Add subpaths
                             if juction_cov >= kwargs["mincov"]:
-                                kwargs["logger"].debug(f"Adding subpath {[u_index, v_index]}")
+                                kwargs["logger"].debug(
+                                    f"Adding subpath {[u_index, v_index]}"
+                                )
                                 subpaths[subpath_count] = [u_index, v_index]
                                 subpath_count += 1
 
                                 # Extend subpaths using coverages of successors and predecessors
-                                u_pred = [x for x in G_edge.predecessors(u)]
-                                v_succ = [x for x in G_edge.successors(v)]
+                                # u_pred = [x for x in G_edge.predecessors(u)]
+                                # v_succ = [x for x in G_edge.successors(v)]
 
                                 # Extend subpath using coverages of predecessors
                                 for u_pred in G_edge.predecessors(u):
-                                    u_pred_name = kwargs["unitig_names_rev"][u_pred[:-1]]
+                                    u_pred_name = kwargs["unitig_names_rev"][
+                                        u_pred[:-1]
+                                    ]
                                     u_pred_index = candidate_nodes.index(u_pred_name)
                                     u_pred_cov = kwargs["unitig_coverages"][u_pred[:-1]]
                                     u_cov = kwargs["unitig_coverages"][u[:-1]]
 
                                     if (
-                                            v_index != 0
-                                            and u_index != 0
-                                            and u_pred_index != v_index
+                                        v_index != 0
+                                        and u_index != 0
+                                        and u_pred_index != v_index
                                     ):
                                         if (
-                                                abs(min(u_pred_cov, u_cov) - cov["weight"])
-                                                < kwargs["covtol"]
+                                            abs(min(u_pred_cov, u_cov) - cov["weight"])
+                                            < kwargs["covtol"]
                                         ):
                                             subpaths[subpath_count] = [
                                                 u_pred_index,
@@ -877,21 +928,23 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                                 # Extend subpath using coverages of successors
                                 for v_succ in G_edge.successors(v):
-                                    v_succ_name = kwargs["unitig_names_rev"][v_succ[:-1]]
+                                    v_succ_name = kwargs["unitig_names_rev"][
+                                        v_succ[:-1]
+                                    ]
                                     v_succ_index = candidate_nodes.index(v_succ_name)
                                     v_succ_cov = kwargs["unitig_coverages"][v_succ[:-1]]
                                     v_cov = kwargs["unitig_coverages"][v[:-1]]
 
                                     if (
-                                            v_succ_index != 0
-                                            and u_index != 0
-                                            and v_index != 0
-                                            and v_index != len(candidate_nodes)
-                                            and v_succ_index != u_index
+                                        v_succ_index != 0
+                                        and u_index != 0
+                                        and v_index != 0
+                                        and v_index != len(candidate_nodes)
+                                        and v_succ_index != u_index
                                     ):
                                         if (
-                                                abs(min(v_succ_cov, v_cov) - cov["weight"])
-                                                < kwargs["covtol"]
+                                            abs(min(v_succ_cov, v_cov) - cov["weight"])
+                                            < kwargs["covtol"]
                                         ):
                                             subpaths[subpath_count] = [
                                                 u_index,
@@ -910,15 +963,22 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 # v_succ = [x for x in G_edge.successors(v)]
 
                                 for u_pred in G_edge.predecessors(u):
-                                    if kwargs["junction_pe_coverage"][(u_pred[:-1], v[:-1])] > 0:
-                                        u_pred_name = kwargs["unitig_names_rev"][u_pred[:-1]]
+                                    if (
+                                        kwargs["junction_pe_coverage"][
+                                            (u_pred[:-1], v[:-1])
+                                        ]
+                                        > 0
+                                    ):
+                                        u_pred_name = kwargs["unitig_names_rev"][
+                                            u_pred[:-1]
+                                        ]
                                         u_pred_index = candidate_nodes.index(
                                             u_pred_name
                                         )
                                         if (
-                                                v_index != 0
-                                                and u_index != 0
-                                                and u_pred_index != v_index
+                                            v_index != 0
+                                            and u_index != 0
+                                            and u_pred_index != v_index
                                         ):
                                             subpaths[subpath_count] = [
                                                 u_pred_index,
@@ -931,17 +991,24 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             subpath_count += 1
 
                                 for v_succ in G_edge.successors(v):
-                                    if kwargs["junction_pe_coverage"][(u[:-1], v_succ[:-1])] > 0:
-                                        v_succ_name = kwargs["unitig_names_rev"][v_succ[:-1]]
+                                    if (
+                                        kwargs["junction_pe_coverage"][
+                                            (u[:-1], v_succ[:-1])
+                                        ]
+                                        > 0
+                                    ):
+                                        v_succ_name = kwargs["unitig_names_rev"][
+                                            v_succ[:-1]
+                                        ]
                                         v_succ_index = candidate_nodes.index(
                                             v_succ_name
                                         )
                                         if (
-                                                v_succ_index != 0
-                                                and u_index != 0
-                                                and v_index != 0
-                                                and v_index != len(candidate_nodes)
-                                                and v_succ_index != u_index
+                                            v_succ_index != 0
+                                            and u_index != 0
+                                            and v_index != 0
+                                            and v_index != len(candidate_nodes)
+                                            and v_succ_index != u_index
                                         ):
                                             subpaths[subpath_count] = [
                                                 u_index,
@@ -965,16 +1032,18 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     }
                     kwargs["logger"].debug(f"G_mfd: {G_mfd}")
                     solution_paths = flow_utils.solve_mfd(
-                        G_mfd, kwargs["maxpaths"], kwargs["output"], kwargs["nthreads"]
+                        G_mfd, kwargs["maxpaths"], kwargs["nthreads"]
                     )
-                    kwargs["logger"].debug(f"Number of paths found: {len(solution_paths)}")
+                    kwargs["logger"].debug(
+                        f"Number of paths found: {len(solution_paths)}"
+                    )
 
-                    results['case3_found'].add(my_count)
+                    results["case3_found"].add(my_count)
 
                     # Iterate through solution paths
                     # ----------------------------------------------------------------------
                     if len(solution_paths) != 0:
-                        results['virus_like_edges'] = results['virus_like_edges'].union(
+                        results["virus_like_edges"] = results["virus_like_edges"].union(
                             set(original_candidate_nodes)
                         )
 
@@ -1021,7 +1090,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                     edge_list_indices[path_edge]
                                                 )
 
-                                            kwargs["logger"].debug(f"path_order: {path_order}")
+                                            kwargs["logger"].debug(
+                                                f"path_order: {path_order}"
+                                            )
 
                                             # Get the order of unitigs in path
                                             path_string = ""
@@ -1035,7 +1106,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                                                 if node.endswith("+"):
                                                     unitig_seq = str(
-                                                        kwargs["graph_unitigs"][unitig_name]
+                                                        kwargs["graph_unitigs"][
+                                                            unitig_name
+                                                        ]
                                                     )
                                                 else:
                                                     unitig_seq = str(
@@ -1051,10 +1124,10 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                                                 else:
                                                     trimmed_seq = unitig_seq[
-                                                                  kwargs["link_overlap"][
-                                                                      (previous_edge, node)
-                                                                  ]:
-                                                                  ]
+                                                        kwargs["link_overlap"][
+                                                            (previous_edge, node)
+                                                        ] :
+                                                    ]
                                                     path_string += trimmed_seq
                                                     total_length += len(trimmed_seq)
 
@@ -1073,8 +1146,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                 int(coverage_val),
                                                 total_length,
                                                 (
-                                                        path_string.count("G")
-                                                        + path_string.count("C")
+                                                    path_string.count("G")
+                                                    + path_string.count("C")
                                                 )
                                                 / len(path_string)
                                                 * 100,
@@ -1091,12 +1164,14 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             f"Could not resolve a continuous path."
                                         )
 
-                        kwargs["logger"].debug(f"Number of paths selected: {cycle_number - 1}")
+                        kwargs["logger"].debug(
+                            f"Number of paths selected: {cycle_number - 1}"
+                        )
 
                         if cycle_number > 1:
-                            results['resolved_components'].add(my_count)
-                            results['resolved_linear'].add(my_count)
-                            results['case3_resolved'].add(my_count)
+                            results["resolved_components"].add(my_count)
+                            results["resolved_linear"].add(my_count)
+                            results["case3_resolved"].add(my_count)
 
                     else:
                         kwargs["logger"].debug(f"No paths detected")
@@ -1104,17 +1179,16 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
         # Case 1 components - single unitigs
         elif len(candidate_nodes) == 1:
-
             unitig_name = kwargs["unitig_names"][candidate_nodes[0]]
 
-            results['case1_found'].add(my_count)
+            results["case1_found"].add(my_count)
 
             if unitig_name in kwargs["self_looped_nodes"]:
                 case_name = "case1_circular"
             else:
                 case_name = "case1_linear"
 
-            results['resolved_edges'].add(candidate_nodes[0])
+            results["resolved_edges"].add(candidate_nodes[0])
             comp_resolved_edges.add(candidate_nodes[0])
 
             path_string = str(kwargs["graph_unitigs"][unitig_name])
@@ -1135,12 +1209,13 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 * 100,
             )
             my_genomic_paths.append(genome_path)
-            results['resolved_components'].add(my_count)
-            results['single_unitigs'].add(my_count)
-            results['case1_resolved'].add(my_count)
+            results["resolved_components"].add(my_count)
+            results["single_unitigs"].add(my_count)
+            results["case1_resolved"].add(my_count)
 
-            results['virus_like_edges'] = results['virus_like_edges'].union(set(candidate_nodes))
-
+            results["virus_like_edges"] = results["virus_like_edges"].union(
+                set(candidate_nodes)
+            )
 
         # Record final paths for the component
         # ----------------------------------------------------------------------
@@ -1152,7 +1227,6 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
         visited_nodes = set()
         comp_resolved_paths = set()
 
-        frac_unitigs = 1
         n_paths = 0
 
         if len(my_genomic_paths) > 0:
@@ -1193,15 +1267,17 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
             frac_unitigs = len(visited_nodes) / len(original_candidate_nodes)
 
-            results['resolved_edges'] = results['resolved_edges'].union(comp_resolved_edges)
+            results["resolved_edges"] = results["resolved_edges"].union(
+                comp_resolved_edges
+            )
 
             kwargs["logger"].debug(f"frac_unitigs: {frac_unitigs}")
 
             # Filter components
             if (
-                    len(final_genomic_paths) > 1
-                    and len(in_degree) > 0
-                    and len(out_degree) > 0
+                len(final_genomic_paths) > 1
+                and len(in_degree) > 0
+                and len(out_degree) > 0
             ):
                 # Create GenomeComponent object with component details
                 genome_comp = GenomeComponent(
@@ -1228,11 +1304,11 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     max(path_coverages) / min(path_coverages),
                     frac_unitigs,
                 )
-                results['all_components'].append(genome_comp)
+                results["all_components"].append(genome_comp)
 
             if len(final_genomic_paths) > 0:
-                results['resolved_components'].add(my_count)
-                results['all_resolved_paths'] += final_genomic_paths
+                results["resolved_components"].add(my_count)
+                results["all_resolved_paths"] += final_genomic_paths
                 component_elapsed_time = time.time() - component_time_start
                 kwargs["logger"].debug(
                     f"Elapsed time to resolve component {my_count} with {len(original_candidate_nodes)} nodes: {component_elapsed_time} seconds"
@@ -1242,16 +1318,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
             # single unitigs
             for genomic_path in my_genomic_paths:
                 final_genomic_paths.append(genomic_path)
-                results['all_resolved_paths'].append(genomic_path)
+                results["all_resolved_paths"].append(genomic_path)
                 kwargs["logger"].debug(f"{genomic_path.id}\t{genomic_path.length}")
-                results['resolved_components'].add(my_count)
-
-        # Get unresolved edges
-        unresolved_edges = comp_all_edges.difference(comp_resolved_edges)
-        results['unresolved_virus_like_edges'] = results['unresolved_virus_like_edges'].union(
-            unresolved_edges
-        )
-        kwargs["logger"].debug(f"Unresolved edges in comp {my_count}: {unresolved_edges}")
+                results["resolved_components"].add(my_count)
 
         # Add the paths for writing
         results["genome_path_sets"].add(tuple(final_genomic_paths))
@@ -1265,22 +1334,38 @@ def main(**kwargs):
 
     kwargs["logger"] = setup_logging(**kwargs)
 
-    kwargs["logger"].info("Welcome to Reneo: Unraveling Viral Genomes from Metagenomes.")
+    kwargs["logger"].info(
+        "Welcome to Reneo: Unraveling Viral Genomes from Metagenomes."
+    )
     kwargs["logger"].info(f"Input arguments: ")
     kwargs["logger"].info(f"Assembly graph file: {kwargs['graph']}")
     kwargs["logger"].info(f"Unitig coverage file: {kwargs['coverage']}")
     kwargs["logger"].info(f"BAM files path: {kwargs['bampath']}")
     kwargs["logger"].info(f"Unitig .hmmout file: {kwargs['hmmout']}")
     kwargs["logger"].info(f"Unitig vog annotations file: {kwargs['vogs']}")
-    kwargs["logger"].info(f"Minimum length of unitigs to consider: {kwargs['minlength']}")
+    kwargs["logger"].info(
+        f"Minimum length of unitigs to consider: {kwargs['minlength']}"
+    )
     kwargs["logger"].info(f"Minimum coverage of paths to output: {kwargs['mincov']}")
-    kwargs["logger"].info(f"Minimum unitig count to consider a component: {kwargs['compcount']}")
-    kwargs["logger"].info(f"Maximum number of paths to resolve for a component: {kwargs['maxpaths']}")
-    kwargs["logger"].info(f"Length threshold to consider single copy marker genes: {kwargs['mgfrac']}")
+    kwargs["logger"].info(
+        f"Minimum unitig count to consider a component: {kwargs['compcount']}"
+    )
+    kwargs["logger"].info(
+        f"Maximum number of paths to resolve for a component: {kwargs['maxpaths']}"
+    )
+    kwargs["logger"].info(
+        f"Length threshold to consider single copy marker genes: {kwargs['mgfrac']}"
+    )
     kwargs["logger"].info(f"Maximum e-value for vog annotations: {kwargs['evalue']}")
-    kwargs["logger"].info(f"Minimum hmm score for vog annotations: {kwargs['hmmscore']}")
-    kwargs["logger"].info(f"Coverage tolerance for extending subpaths: {kwargs['covtol']}")
-    kwargs["logger"].info(f"Coverage multipler for flow interval modelling: {kwargs['alpha']}")
+    kwargs["logger"].info(
+        f"Minimum hmm score for vog annotations: {kwargs['hmmscore']}"
+    )
+    kwargs["logger"].info(
+        f"Coverage tolerance for extending subpaths: {kwargs['covtol']}"
+    )
+    kwargs["logger"].info(
+        f"Coverage multipler for flow interval modelling: {kwargs['alpha']}"
+    )
     kwargs["logger"].info(f"Number of threads to use: {kwargs['nthreads']}")
     kwargs["logger"].info(f"Output folder: {kwargs['output']}")
 
@@ -1288,7 +1373,7 @@ def main(**kwargs):
 
     # Init files
     # ----------------------------------------------------------------------
-    init_files(kwargs['output'])
+    init_files(kwargs["output"])
 
     # Get assembly graph
     # ----------------------------------------------------------------------
@@ -1312,26 +1397,34 @@ def main(**kwargs):
 
     # Get single unitigs
     # ----------------------------------------------------------------------
-    kwargs["circular"] = edge_graph_utils.get_circular(kwargs["self_looped_nodes"], kwargs["graph_unitigs"])
+    kwargs["circular"] = edge_graph_utils.get_circular(
+        kwargs["self_looped_nodes"], kwargs["graph_unitigs"]
+    )
 
     # Get unitigs with bacterial single copy marker genes
     # ----------------------------------------------------------------------
     if kwargs["hmmout"]:
-        kwargs["smg_unitigs"] = gene_utils.get_smg_unitigs(kwargs["hmmout"], kwargs["mgfrac"])
+        kwargs["smg_unitigs"] = gene_utils.get_smg_unitigs(
+            kwargs["hmmout"], kwargs["mgfrac"]
+        )
     else:
         kwargs["smg_unitigs"] = set()
 
     # Get unitigs with PHROGs
     # ----------------------------------------------------------------------
     if kwargs["vogs"]:
-        kwargs["unitig_vogs"] = gene_utils.get_vog_unitigs(kwargs["vogs"], kwargs["evalue"], kwargs["hmmscore"])
+        kwargs["unitig_vogs"] = gene_utils.get_vog_unitigs(
+            kwargs["vogs"], kwargs["evalue"], kwargs["hmmscore"]
+        )
     else:
         kwargs["unitig_vogs"] = kwargs["graph_unitigs"]
 
     # Get components with viral genes
     # ----------------------------------------------------------------------
     kwargs["pruned_vs"], kwargs["comp_vogs"] = component_utils.get_components(**kwargs)
-    kwargs["logger"].info(f"Total number of components found: {len(kwargs['pruned_vs'])}")
+    kwargs["logger"].info(
+        f"Total number of components found: {len(kwargs['pruned_vs'])}"
+    )
 
     # Get unitig and junction pe coverages
     # ----------------------------------------------------------------------
@@ -1347,7 +1440,7 @@ def main(**kwargs):
     results_queue = queue.Queue()
 
     # Populate worker queue
-    for my_count in tqdm(kwargs["pruned_vs"], desc="Resolving components"):
+    for my_count in kwargs["pruned_vs"]:
         component_queue.put(my_count)
 
     # Send finish signals to queue for each worker
@@ -1359,8 +1452,12 @@ def main(**kwargs):
     for _ in range(kwargs["nthreads"]):
         t = threading.Thread(
             target=worker_resolve_components,
-            args=(component_queue, results_queue,),
-            kwargs=kwargs)
+            args=(
+                component_queue,
+                results_queue,
+            ),
+            kwargs=kwargs,
+        )
         t.start()
         worker_threads.append(t)
 
@@ -1372,77 +1469,122 @@ def main(**kwargs):
     results = results_dict()
 
     while not results_queue.empty():
-        r = results_queue.get()  # Dequeue (get and remove) the element from the front of the queue
+        r = (
+            results_queue.get()
+        )  # Dequeue (get and remove) the element from the front of the queue
         results = merge_results(results, r)
+
+    # Get unresolved edges
+    results["unresolved_virus_like_edges"] = results[
+        "all_virus_like_edges"
+    ].difference(results["resolved_edges"])
 
     # write all the final genomic paths
     for final_genomic_paths in results["genome_path_sets"]:
         write_path(final_genomic_paths, kwargs["output"])
-        # write_path_fasta(final_genomic_paths, f"{kwargs['output']}/resolved_viruses")
+        if kwargs["genomes_folder"]:
+            write_path_fasta(
+                final_genomic_paths, f"{kwargs['output']}/resolved_viruses"
+            )
 
     # Log final summary information
     # ----------------------------------------------------------------------
-    kwargs["logger"].info(f"Total number of cyclic components found: {len(results['cycle_components'])}")
-    kwargs["logger"].info(f"Total number of cyclic components resolved: {len(results['resolved_cyclic'])}")
-    kwargs["logger"].info(f"Single unitigs identified: {len(results['single_unitigs'])}")
-    kwargs["logger"].info(f"Total number of linear components found: {len(results['linear_components'])}")
-    kwargs["logger"].info(f"Total number of linear components resolved: {len(results['resolved_linear'])}")
+    kwargs["logger"].info(
+        f"Total number of cyclic components found: {len(results['cycle_components'])}"
+    )
+    kwargs["logger"].info(
+        f"Total number of cyclic components resolved: {len(results['resolved_cyclic'])}"
+    )
+    kwargs["logger"].info(
+        f"Single unitigs identified: {len(results['single_unitigs'])}"
+    )
+    kwargs["logger"].info(
+        f"Total number of linear components found: {len(results['linear_components'])}"
+    )
+    kwargs["logger"].info(
+        f"Total number of linear components resolved: {len(results['resolved_linear'])}"
+    )
     kwargs["logger"].info(
         f"Total number of cyclic components found including single unitigs: {len(results['cycle_components']) + len(results['single_unitigs'])}"
     )
     kwargs["logger"].info(
         f"Total number of components resolved: {len(results['single_unitigs'])+len(results['resolved_cyclic'])+len(results['resolved_linear'])}"
     )
-    kwargs["logger"].info(f"Case 1 (resolved/found): {len(results['case1_resolved'])}/{len(results['case1_found'])}")
-    kwargs["logger"].info(f"Case 2 (resolved/found): {len(results['case2_resolved'])}/{len(results['case2_found'])}")
-    kwargs["logger"].info(f"Case 3 (resolved/found): {len(results['case3_resolved'])}/{len(results['case3_found'])}")
-    kwargs["logger"].info(f"Total number of genomes resolved: {len(results['all_resolved_paths'])}")
+    kwargs["logger"].info(
+        f"Case 1 (resolved/found): {len(results['case1_resolved'])}/{len(results['case1_found'])}"
+    )
+    kwargs["logger"].info(
+        f"Case 2 (resolved/found): {len(results['case2_resolved'])}/{len(results['case2_found'])}"
+    )
+    kwargs["logger"].info(
+        f"Case 3 (resolved/found): {len(results['case3_resolved'])}/{len(results['case3_found'])}"
+    )
+    kwargs["logger"].info(
+        f"Total number of genomes resolved: {len(results['all_resolved_paths'])}"
+    )
 
-    if len(results['all_resolved_paths']) == 0:
+    if len(results["all_resolved_paths"]) == 0:
         kwargs["logger"].info(f"No genomes were resolved.")
     else:
-        kwargs["logger"].info(f"Resolved genomes can be found in {kwargs['output']}/resolved_paths.fasta")
+        kwargs["logger"].info(
+            f"Resolved genomes can be found in {kwargs['output']}/resolved_paths.fasta"
+        )
 
     # Write edges to file
     # ----------------------------------------------------------------------
+    if kwargs["unitigs"]:
+        write_unitigs(
+            results["virus_like_edges"],
+            kwargs["unitig_names"],
+            kwargs["graph_unitigs"],
+            "virus_like_edges",
+            kwargs["output"],
+        )
+        write_unitigs(
+            results["all_virus_like_edges"],
+            kwargs["unitig_names"],
+            kwargs["graph_unitigs"],
+            "all_virus_like_edges",
+            kwargs["output"],
+        )
+        write_unitigs(
+            results["unresolved_virus_like_edges"],
+            kwargs["unitig_names"],
+            kwargs["graph_unitigs"],
+            "unresolved_virus_like_edges",
+            kwargs["output"],
+        )
 
-    # write_unitigs(
-    #     results['virus_like_edges'], kwargs["unitig_names"], kwargs["graph_unitigs"], "virus_like_edges", kwargs["output"]
-    # )
-    # write_unitigs(
-    #     results["all_virus_like_edges"],
-    #     kwargs["unitig_names"],
-    #     kwargs["graph_unitigs"],
-    #     "all_virus_like_edges",
-    #     kwargs["output"],
-    # )
-    # write_unitigs(results['resolved_edges'], kwargs["unitig_names"], kwargs["graph_unitigs"], "resolved_edges", kwargs["output"])
     write_unitigs(
-        results['unresolved_virus_like_edges'],
+        results["resolved_edges"],
         kwargs["unitig_names"],
         kwargs["graph_unitigs"],
-        "unresolved_virus_like_edges",
+        "resolved_edges",
         kwargs["output"],
     )
 
     # Record path information
     # ----------------------------------------------------------------------
 
-    filename = write_res_genome_info(results['all_resolved_paths'], kwargs["output"])
-    if len(results['all_resolved_paths']) > 0:
-        kwargs["logger"].info(f"Resolved genome information can be found in {kwargs['output']}/{filename}")
+    filename = write_res_genome_info(results["all_resolved_paths"], kwargs["output"])
+    if len(results["all_resolved_paths"]) > 0:
+        kwargs["logger"].info(
+            f"Resolved genome information can be found in {kwargs['output']}/{filename}"
+        )
 
     # Record component information
     # ----------------------------------------------------------------------
 
-    filename = write_component_info(results['all_components'], kwargs["output"])
-    if len(results['all_components']) > 0:
+    filename = write_component_info(results["all_components"], kwargs["output"])
+    if len(results["all_components"]) > 0:
         kwargs["logger"].info(
             f"Resolved component information can be found in {kwargs['output']}/{filename}"
         )
 
-    filename = write_component_vog_info(results['resolved_components'], kwargs["comp_vogs"], kwargs["output"])
-    if len(results['resolved_components']) > 0:
+    filename = write_component_vog_info(
+        results["resolved_components"], kwargs["comp_vogs"], kwargs["output"]
+    )
+    if len(results["resolved_components"]) > 0:
         kwargs["logger"].info(
             f"PHROGs found in resolved components can be found in {kwargs['output']}/{filename}"
         )
@@ -1464,24 +1606,26 @@ def main(**kwargs):
 
 if __name__ == "__main__":
     main(
-    graph = snakemake.input.graph,
-    coverage = snakemake.input.coverage,
-    pickle_file = snakemake.input.pickle,
-    bampath = snakemake.params.bampath,
-    hmmout = snakemake.params.hmmout,
-    vogs = snakemake.params.vogs,
-    minlength = int(snakemake.params.minlength),
-    mincov = int(snakemake.params.mincov),
-    compcount = int(snakemake.params.compcount),
-    maxpaths = int(snakemake.params.maxpaths),
-    mgfrac = float(snakemake.params.mgfrac),
-    evalue = float(snakemake.params.evalue),
-    hmmscore = float(snakemake.params.hmmscore),
-    covtol = float(snakemake.params.covtol),
-    alpha = float(snakemake.params.alpha),
-    output = snakemake.params.output,
-    nthreads = snakemake.threads,
-    log = snakemake.log.out,
-    MAX_VAL=sys.maxsize,
-    LEN_THRESHOLD = 0.95
+        graph=snakemake.input.graph,
+        coverage=snakemake.input.coverage,
+        pickle_file=snakemake.input.pickle,
+        bampath=snakemake.params.bampath,
+        genomes_folder=snakemake.params.genomes_folder,
+        unitigs=snakemake.params.unitigs,
+        hmmout=snakemake.params.hmmout,
+        vogs=snakemake.params.vogs,
+        minlength=int(snakemake.params.minlength),
+        mincov=int(snakemake.params.mincov),
+        compcount=int(snakemake.params.compcount),
+        maxpaths=int(snakemake.params.maxpaths),
+        mgfrac=float(snakemake.params.mgfrac),
+        evalue=float(snakemake.params.evalue),
+        hmmscore=float(snakemake.params.hmmscore),
+        covtol=float(snakemake.params.covtol),
+        alpha=float(snakemake.params.alpha),
+        output=snakemake.params.output,
+        nthreads=snakemake.threads,
+        log=snakemake.log.stderr,
+        MAX_VAL=sys.maxsize,
+        LEN_THRESHOLD=0.95,
     )

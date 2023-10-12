@@ -196,9 +196,9 @@ def FD_Algorithm(data, max_paths, nthreads):
     return data, solution_paths
 
 
-def SolveInstances(Graphs, max_paths, outfile, recfile, nthreads):
-    fp = open(outfile, "w+")
-    fc = open(recfile, "w+")
+def SolveInstances(Graphs, max_paths, fp, fc, nthreads):
+    # fp = open(outfile, "w+")
+    # fc = open(recfile, "w+")
 
     for s in range(0, 1):
         f_low = {}

@@ -7,27 +7,25 @@ rule run_reneo:
         other = preprocessTargets
     output:
         genomes_fasta = os.path.join(RESDIR, "resolved_paths.fasta"),
-        # genomes_folder = directory(os.path.join(RESDIR, "resolved_viruses")), # todo: optional
         genome_info = os.path.join(RESDIR, "resolved_genome_info.txt"),
-        # unitigs = os.path.join(RESDIR, "resolved_edges.fasta"), # todo: optional
         component_info = os.path.join(RESDIR, "resolved_component_info.txt"),
         vog_comp_info = os.path.join(RESDIR, "component_vogs.txt"),
-        unresolved_edges = os.path.join(RESDIR, "unresolved_virus_like_edges.fasta"),
     params:
-        # graph = GRAPH_FILE,
-        vogs=lambda w: VOG_ANNOT if config["hmmsearch"] else "",
-        hmmout=lambda w: SMG_FILE if config["hmmsearch"] else "",
-        # coverage = COVERAGE_FILE,
+        genomes_folder = lambda w: directory(os.path.join(RESDIR,"resolved_viruses")) if config["split_paths"] else None,
+        unitigs= lambda w: os.path.join(RESDIR,"resolved_edges.fasta") if config["unitigs"] else None,
+        unresolved_edges= os.path.join(RESDIR,"unresolved_virus_like_edges.fasta"),
+        vogs=lambda w: VOG_ANNOT if config["hmmsearch"] else None,
+        hmmout=lambda w: SMG_FILE if config["hmmsearch"] else None,
         bampath = BAM_PATH,
-        minlength = ML,
-        mincov = MC,
-        compcount = CC,
-        maxpaths = MP,
-        mgfrac = MGF,
-        evalue = EV,
-        hmmscore = HS,
-        covtol = CT,
-        alpha = AL,
+        minlength = config['minlength'],
+        mincov = config['mincov'],
+        compcount = config['compcount'],
+        maxpaths = config['maxpaths'],
+        mgfrac = config['mgfrac'],
+        evalue = config['evalue'],
+        hmmscore = config['hmmscore'],
+        covtol = config['covtol'],
+        alpha = config['alpha'],
         output = RESDIR,
     threads:
         config["resources"]["big"]["cpu"]
@@ -36,8 +34,8 @@ rule run_reneo:
         mem = str(config["resources"]["big"]["mem"]) + "MB",
         time = config["resources"]["big"]["time"]
     log:
-        err = os.path.join(LOGSDIR, "reneo_output.err"),
-        out = os.path.join(LOGSDIR, "reneo_output.out")
+        stderr = os.path.join(LOGSDIR, "reneo_output.err"),
+        stdout = os.path.join(LOGSDIR, "reneo_output.out")
     conda:
         os.path.join("..", "envs", "reneo.yaml")
     script:
