@@ -1,8 +1,3 @@
-"""
-Use raw_coverage to map to calculate coverage of unitigs.
-Use combine_cov to combine the coverage values of multiple samples into one file.
-"""
-
 rule koverage_tsv:
     """Generate TSV of samples and reads for Koverage"""
     output:
