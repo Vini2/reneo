@@ -10,10 +10,10 @@ rule run_reneo:
         genome_info = os.path.join(RESDIR, "resolved_genome_info.txt"),
         component_info = os.path.join(RESDIR, "resolved_component_info.txt"),
         vog_comp_info = os.path.join(RESDIR, "component_vogs.txt"),
+        unresolved_edges= os.path.join(RESDIR,"unresolved_virus_like_edges.fasta"),
     params:
         genomes_folder = lambda w: directory(os.path.join(RESDIR,"resolved_viruses")) if config["split_paths"] else None,
         unitigs= lambda w: os.path.join(RESDIR,"resolved_edges.fasta") if config["unitigs"] else None,
-        unresolved_edges= os.path.join(RESDIR,"unresolved_virus_like_edges.fasta"),
         vogs=lambda w: VOG_ANNOT if config["hmmsearch"] else None,
         hmmout=lambda w: SMG_FILE if config["hmmsearch"] else None,
         bampath = BAM_PATH,
