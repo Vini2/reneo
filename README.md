@@ -8,6 +8,7 @@ Reneo: Unraveling Viral Genomes from Metagenomes
 [![DOI](https://zenodo.org/badge/619432085.svg)](https://zenodo.org/badge/latestdoi/619432085)
 ![GitHub](https://img.shields.io/github/license/vini2/reneo)
 [![](https://img.shields.io/static/v1?label=CLI&message=Snaketool&color=blueviolet)](https://github.com/beardymcjohnface/Snaketool)
+![Conda](https://img.shields.io/conda/v/bioconda/reneo)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/Vini2/reneo?color=8a35da)
 
