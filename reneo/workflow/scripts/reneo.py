@@ -597,7 +597,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 }
                 kwargs["logger"].debug(f"G_mfd: {G_mfd}")
                 solution_paths = flow_utils.solve_mfd(
-                    G_mfd, kwargs["maxpaths"], kwargs["nthreads"]
+                    G_mfd, kwargs["maxpaths"], 1
                 )
                 kwargs["logger"].debug(f"Number of paths found: {len(solution_paths)}")
 
@@ -1032,7 +1032,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     }
                     kwargs["logger"].debug(f"G_mfd: {G_mfd}")
                     solution_paths = flow_utils.solve_mfd(
-                        G_mfd, kwargs["maxpaths"], kwargs["nthreads"]
+                        G_mfd, kwargs["maxpaths"], 1
                     )
                     kwargs["logger"].debug(
                         f"Number of paths found: {len(solution_paths)}"
