@@ -1,10 +1,10 @@
 rule combine_genomes_and_unresolved_edges:
     """Combine resolved genomes and unresolved edges"""
     input:
-        genomes = RESOLVED_GENOMES,
-        unresolved_edges = os.path.join(OUTDIR, "unresolved_virus_like_edges.fasta")
+        genomes = os.path.join(RESDIR, "resolved_paths.fasta"),
+        unresolved_edges = os.path.join(RESDIR, "unresolved_virus_like_edges.fasta")
     output:
-        os.path.join(OUTDIR, "genomes_and_unresolved_edges.fasta")
+        os.path.join(RESDIR, "genomes_and_unresolved_edges.fasta")
     shell:
         """
         cat {input.genomes} {input.unresolved_edges} > {output}
@@ -15,14 +15,15 @@ rule koverage_genomes:
     """Get coverage statistics with Koverage"""
     input:
         tsv = os.path.join(OUTDIR,"reneo.samples.tsv"),
-        sequences = os.path.join(OUTDIR, "genomes_and_unresolved_edges.fasta")
+        sequences = os.path.join(RESDIR, "genomes_and_unresolved_edges.fasta")
     params:
         out_dir = OUTDIR,
         profile = lambda wildcards: "--profile " + config["profile"] if config["profile"] else "",
     output:
-        os.path.join(OUTDIR, "results", "sample_coverage.tsv")
+        os.path.join(RESDIR, "sample_coverage.tsv"),
+        os.path.join(RESDIR, "all_coverage.tsv"),
     threads:
-        config["resources"]["big"]["cpu"]
+        lambda w: 1 if config["profile"] else config["resources"]["big"]["cpu"]
     resources:
         mem_mb = config["resources"]["big"]["mem"],
         mem = str(config["resources"]["big"]["mem"]) + "MB",
@@ -40,23 +41,24 @@ rule koverage_genomes:
         """
 
 
+
 rule koverage_postprocess:
     """Format TSV of samples and reads from Koverage"""
     input:
-        koverage_tsv = os.path.join(OUTDIR, "results", "sample_coverage.tsv"),
+        koverage_tsv = os.path.join(RESDIR, "sample_coverage.tsv"),
         samples_file = os.path.join(OUTDIR, "reneo.samples.tsv"),
-        seq_file = os.path.join(OUTDIR, "genomes_and_unresolved_edges.fasta")
+        seq_file = os.path.join(RESDIR, "genomes_and_unresolved_edges.fasta")
     output:
-        os.path.join(OUTDIR, "sample_genome_read_counts.tsv")
+        os.path.join(RESDIR, "sample_genome_read_counts.tsv")
     params:
-        koverage_tsv = os.path.join(OUTDIR, "results", "sample_coverage.tsv"),
+        koverage_tsv = os.path.join(RESDIR, "sample_coverage.tsv"),
         samples_file = os.path.join(OUTDIR, "reneo.samples.tsv"),
-        seq_file = os.path.join(OUTDIR, "genomes_and_unresolved_edges.fasta"),
-        info_file = os.path.join(OUTDIR, "genomes_and_unresolved_edges_info.tsv"),
-        output_path = OUTDIR,
+        info_file = os.path.join(RESDIR, "genomes_and_unresolved_edges_info.tsv"),
+        output_path = RESDIR,
         log = os.path.join(LOGSDIR, "format_koverage_results_output.log")
     log:
-        os.path.join(LOGSDIR, "format_koverage_results_output.log")
+        stderr = os.path.join(LOGSDIR, "format_koverage_results_output.err"),
+        stdout = os.path.join(LOGSDIR, "format_koverage_results_output.out")
     conda:
         os.path.join("..", "envs", "reneo.yaml")
     script:

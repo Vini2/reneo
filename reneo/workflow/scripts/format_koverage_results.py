@@ -26,32 +26,22 @@ def main():
 
     samples_file = snakemake.params.samples_file
     koverage_tsv = snakemake.params.koverage_tsv
-    seq_file = snakemake.params.seq_file
+    seq_file = snakemake.input.seq_file
     info_file = snakemake.params.info_file
     output_path = snakemake.params.output_path
-    log = snakemake.params.log
 
     # Setup logger
     # ----------------------------------------------------------------------
 
-    logger = logging.getLogger("format_coverage")
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(
+        filename=snakemake.log.stderr,
+        level=logging.DEBUG,
+        format="%(asctime)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     logging.captureWarnings(True)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    consoleHeader = logging.StreamHandler()
-    consoleHeader.setFormatter(formatter)
-    consoleHeader.setLevel(logging.INFO)
-    logger.addHandler(consoleHeader)
 
-    # Setup output path for log file
-    if log is None:
-        fileHandler = logging.FileHandler(f"{log}")
-    else:
-        fileHandler = logging.FileHandler(f"{log}")
-
-    fileHandler.setLevel(logging.DEBUG)
-    fileHandler.setFormatter(formatter)
-    logger.addHandler(fileHandler)
+    logger = logging.getLogger("format_koverage_results")
 
     # Validate inputs
     # ---------------------------------------------------
@@ -135,7 +125,6 @@ def main():
         f"Estimated mean read depth of resolved genomes can be found in {output_path}sample_genome_mean_coverage.tsv"
     )
 
-    
     # Make sequence information file
     with open(info_file, "w") as myfile:
         myfile.write(f"contig_reneo_name\tlength\tcontig_or_reneo\n")

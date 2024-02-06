@@ -141,9 +141,9 @@ def write_component_vog_info(resolved_components, comp_vogs, output):
     """
 
     with open(f"{output}/component_vogs.txt", "w") as myfile:
-        myfile.write(f"Viral component\tvog\n")
+        myfile.write(f"Component\tvog\n")
         for comp in resolved_components:
-            myfile.write(f"virus_{comp}\t{comp_vogs[comp]}\n")
+            myfile.write(f"{comp}\t{comp_vogs[comp]}\n")
 
     return "component_vogs.txt"
 
@@ -159,5 +159,5 @@ def init_files(output):
     open(f"{output}/resolved_component_info.txt", "a").close()
     open(f"{output}/component_vogs.txt", "a").close()
 
-    if not os.path.isdir(f"{output}/resolved_viruses"):
-        subprocess.run(f"mkdir -p {output}/resolved_viruses", shell=True)
+    # if not os.path.isdir(f"{output}/resolved_paths"):
+    #     subprocess.run(f"mkdir -p {output}/resolved_paths", shell=True)

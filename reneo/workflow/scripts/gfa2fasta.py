@@ -30,30 +30,37 @@ def main():
 
     assembly_graph_file = snakemake.params.graph
     output_path = snakemake.params.output
-    log = snakemake.params.log
     prefix = ""
 
     # Setup logger
     # ----------------------------------------------------------------------
+    logging.basicConfig(
+        filename=snakemake.log.stderr,
+        level=logging.DEBUG,
+        format="%(asctime)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    logging.captureWarnings(True)
 
     logger = logging.getLogger("gfa2fasta")
-    logger.setLevel(logging.DEBUG)
-    logging.captureWarnings(True)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    consoleHeader = logging.StreamHandler()
-    consoleHeader.setFormatter(formatter)
-    consoleHeader.setLevel(logging.INFO)
-    logger.addHandler(consoleHeader)
+
+    # logger.setLevel(logging.DEBUG)
+
+    # formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    # consoleHeader = logging.StreamHandler()
+    # consoleHeader.setFormatter(formatter)
+    # consoleHeader.setLevel(logging.INFO)
+    # logger.addHandler(consoleHeader)
 
     # Setup output path for log file
-    if log is None:
-        fileHandler = logging.FileHandler(f"{output_path}/gfa2fasta.log")
-    else:
-        fileHandler = logging.FileHandler(f"{log}")
+    # if log is None:
+    #     fileHandler = logging.FileHandler(f"{output_path}/gfa2fasta.log")
+    # else:
+    #     fileHandler = logging.FileHandler(f"{log}")
 
-    fileHandler.setLevel(logging.DEBUG)
-    fileHandler.setFormatter(formatter)
-    logger.addHandler(fileHandler)
+    # fileHandler.setLevel(logging.DEBUG)
+    # fileHandler.setFormatter(formatter)
+    # logger.addHandler(fileHandler)
 
     # Check assembly graph file
     if not os.path.isfile(assembly_graph_file):

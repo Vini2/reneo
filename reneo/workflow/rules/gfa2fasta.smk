@@ -10,8 +10,7 @@ rule run_gfa2fasta:
         EDGES_FILE
     params:
         graph = GRAPH_FILE,
-        output = OUTDIR,
-        log = os.path.join(LOGSDIR, "gfa2fasta.log")
+        output = TMPDIR,
     threads:
         config["resources"]["ram"]["cpu"]
     resources:
@@ -19,8 +18,9 @@ rule run_gfa2fasta:
         mem = str(config["resources"]["ram"]["mem"]) + "MB",
         time = config["resources"]["ram"]["time"]
     log:
-        os.path.join(LOGSDIR, "gfa2fasta.log")
-    conda: 
+        stderr = os.path.join(LOGSDIR, "gfa2fasta.err"),
+        stdout = os.path.join(LOGSDIR, "gfa2fasta.out"),
+    conda:
         os.path.join("..", "envs", "reneo.yaml")
     script:
         os.path.join('..', 'scripts', 'gfa2fasta.py')

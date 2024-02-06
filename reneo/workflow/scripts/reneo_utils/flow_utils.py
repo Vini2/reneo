@@ -1,4 +1,5 @@
 import networkx as nx
+import tempfile
 
 from .FD_Inexact import SolveInstances
 
@@ -70,7 +71,7 @@ def get_source_sink_linear(G_edge, self_looped_nodes):
     return source_candidates, sink_candidates
 
 
-def solve_mfd(G, max_paths, output, nthreads):
+def solve_mfd(G, max_paths, nthreads):
     """
     Get paths by solving MFD
     """
@@ -78,8 +79,8 @@ def solve_mfd(G, max_paths, output, nthreads):
     listOfGraphs = {}
     listOfGraphs[0] = G
 
-    outputfile = f"{output}/results_MFD.txt"
-    recordfile = f"{output}/results_MFD_details.txt"
+    outputfile = tempfile.NamedTemporaryFile(delete=True)
+    recordfile = tempfile.NamedTemporaryFile(delete=True)
 
     solution_paths = SolveInstances(
         listOfGraphs, max_paths, outputfile, recordfile, nthreads

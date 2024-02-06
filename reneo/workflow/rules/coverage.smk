@@ -1,8 +1,3 @@
-"""
-Use raw_coverage to map to calculate coverage of unitigs.
-Use combine_cov to combine the coverage values of multiple samples into one file.
-"""
-
 rule koverage_tsv:
     """Generate TSV of samples and reads for Koverage"""
     output:
@@ -23,13 +18,16 @@ rule koverage:
     params:
         out_dir = OUTDIR,
         profile = lambda wildcards: "--profile " + config["profile"] if config["profile"] else "",
+        configfile = config["configfile"],
+        tmpdir = os.path.join(OUTDIR, "temp"),
+        prevbams = os.path.join(OUTDIR,"bams"),
+        koverage = config["koverage_args"]
     output:
-        expand(os.path.join(OUTDIR, "temp", "{sample}.{ext}"),
-               sample=SAMPLE_NAMES,
-               ext=["bam","bam.bai"]),
-        os.path.join(OUTDIR, "results", "sample_coverm_coverage.tsv")
+        samplecov = temp(expand(os.path.join(OUTDIR,"temp","{sample}.cov"),
+            sample=SAMPLE_NAMES)),
+        cov = COVERAGE_FILE
     threads:
-        config["resources"]["big"]["cpu"]
+        lambda w: 1 if config["profile"] else config["resources"]["big"]["cpu"]
     resources:
         mem_mb = config["resources"]["big"]["mem"],
         mem = str(config["resources"]["big"]["mem"]) + "MB",
@@ -38,23 +36,65 @@ rule koverage:
         os.path.join("..", "envs", "koverage.yaml")
     shell:
         """
-        koverage run coverm \
+        koverage run reneo_coverage \
             --reads {input.tsv} \
             --ref {input.edges} \
             --threads {threads} \
             --output {params.out_dir} \
-            {params.profile}
+            --configfile {params.configfile} \
+            {params.profile} \
+            {params.koverage} 
         """
 
 
-rule run_combine_cov:
-    """Sample\tContig\tCount\tRPKM\tTPM\tMean\tCovered_bases\tVariance\n"""
+rule save_koverage_bams:
+    """Rule is necessary to retain BAM file reentrancy for Koverage"""
     input:
-        os.path.join(OUTDIR, "results", "sample_coverm_coverage.tsv")
+        COVERAGE_FILE
+    params:
+        bams = expand(os.path.join(OUTDIR,"temp","{sample}.{ext}"),
+            sample=SAMPLE_NAMES,
+            ext=["bam", "bam.bai"]),
+        dir = os.path.join(OUTDIR,"bams"),
     output:
-        os.path.join(OUTDIR, "coverage.tsv")
+        expand(os.path.join(OUTDIR,"bams","{sample}.{ext}"),
+            sample=SAMPLE_NAMES,
+            ext=["bam", "bam.bai"]),
     shell:
         """
-        sed -i '1d' {input}
-        awk -F '\t' '{{ sum[$2] += $6 }} END {{ for (key in sum) print key, sum[key] }}' {input} > {output}
+        ln {params.bams} {params.dir}
         """
+
+
+rule find_junctions_and_pickle:
+    """Parse the BAM file and create a python dictionary pickle of PE junctions for contig pairs"""
+    input:
+        bam = os.path.join(OUTDIR, "bams", "{sample}.bam"),
+        bai = os.path.join(OUTDIR, "bams", "{sample}.bam.bai"),
+    output:
+        pkl = temp(os.path.join(OUTDIR, "temp", "{sample}.pkl"))
+    log:
+        stderr = os.path.join(LOGSDIR, "find_junctions_and_pickle.{sample}.err"),
+        stdout = os.path.join(LOGSDIR, "find_junctions_and_pickle.{sample}.out"),
+    benchmark:
+        os.path.join(BENCH, "find_junctions_and_pickle.{sample}.log")
+    conda:
+        os.path.join("..", "envs", "reneo.yaml")
+    script:
+        os.path.join("..", "scripts", "sampleJunctions.py")
+
+
+rule combine_junction_pickles:
+    input:
+        pkls = expand(os.path.join(OUTDIR, "temp", "{sample}.pkl"), sample=SAMPLE_NAMES)
+    output:
+        pkl = PICKLE_FILE
+    log:
+        stderr=os.path.join(LOGSDIR,"combine_junction_pickles.err"),
+        stdout=os.path.join(LOGSDIR,"combine_junction_pickles.out"),
+    benchmark:
+        os.path.join(BENCH,"combine_junction_pickles.log")
+    conda:
+        os.path.join("..","envs","reneo.yaml")
+    script:
+        os.path.join("..","scripts","combineJunctionPickles.py")

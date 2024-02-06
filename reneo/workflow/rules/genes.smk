@@ -14,7 +14,7 @@ rule scan_smg:
         mem = str(config["resources"]["big"]["mem"]) + "MB",
         time = config["resources"]["big"]["time"]
     output:
-        hmmout = os.path.join(OUTDIR, "edges.fasta.hmmout")
+        hmmout = os.path.join(TMPDIR, "edges.fasta.hmmout")
     params:
         frag = EDGES_FILE + ".frag",
         frag_faa = EDGES_FILE + ".frag.faa",
@@ -43,11 +43,11 @@ rule scan_vogs:
         mem = str(config["resources"]["big"]["mem"]) + "MB",
         time = config["resources"]["big"]["time"]
     output:
-        os.path.join(OUTDIR, "all.hmmVOG.tbl")
+        os.path.join(TMPDIR, "all.hmmVOG.tbl")
     params:
-        genes = os.path.join(OUTDIR, "genes.fna"),
-        proteins = os.path.join(OUTDIR, "proteins.faa"),
-        hmm_out = os.path.join(OUTDIR, "vog_hmm_output.txt"),
+        genes = os.path.join(TMPDIR, "genes.fna"),
+        proteins = os.path.join(TMPDIR, "proteins.faa"),
+        hmm_out = os.path.join(TMPDIR, "vog_hmm_output.txt"),
     log:
         os.path.join(LOGSDIR, "vogs_scan.log")
     conda: 
