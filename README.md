@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Vini2/reneo/develop/reneo_logo.png" width="250" title="reneo logo" alt="reneo logo">
+  <img src="https://raw.githubusercontent.com/Vini2/reneo/develop/reneo_logo.png" width="200" title="reneo logo" alt="reneo logo">
 </p>
 
 Reneo: Unraveling Viral Genomes from Metagenomes
