@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+    
+
+jobs:
+  tests:
+    name: "Python ${{ matrix.python-version }}"
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: "actions/checkout@v3"
+        with:
+          fetch-depth: 0
+
+      # Setup env
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: reneo
+          environment-file: build/environment.yml
+          python-version: ${{ matrix.python-version }}
+          auto-activate-base: false
+
+      - name: "Setup Reneo on ${{ matrix.os }} for Python ${{ matrix.python-version }}"
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+      
+      - name: "Generate coverage report on ${{ matrix.os }} for Python ${{ matrix.python-version }}"
+        run: |
+          pip install pytest pytest-cov
+          pytest --cov=./ --cov-report xml --cov-report lcov --cov-append
+          
