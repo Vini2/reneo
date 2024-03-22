@@ -28,7 +28,7 @@ setup(
     name="reneo",
     packages=find_packages(),
     url="https://github.com/Vini2/reneo",
-    python_requires=">=3.8,<3.11",
+    python_requires=">=3.9",
     description="Unraveling Viral Genomes from Metagenomes",
     long_description=get_description(),
     long_description_content_type="text/markdown",
