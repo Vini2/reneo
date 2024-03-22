@@ -68,6 +68,18 @@ After setting up, run the following command to print out the Reneo help message.
 reneo --help
 ```
 
+You can simulate a Reneo run using the following command.
+
+```bash
+reneo simulate
+```
+
+You can also run Reneo with the test dataset provided.
+
+```bash
+reneo test
+```
+
 ### Running Reneo
 
 ```bash
