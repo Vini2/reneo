@@ -28,7 +28,6 @@ reneo:
     covtol: 100
     alpha: 1.2
     koverage_args:
-        --snake-default=""
         --rerun-triggers mtime
         --printshellcmds
         --nolock
