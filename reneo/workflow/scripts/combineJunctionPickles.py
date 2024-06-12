@@ -7,7 +7,7 @@ import pickle
 __author__ = "Michael Roach"
 __copyright__ = "Copyright 2022, Reneo Project"
 __license__ = "MIT"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __maintainer__ = "Vijini Mallawaarachchi"
 __email__ = "viji.mallawaarachchi@gmail.com"
 __status__ = "Development"

@@ -7,7 +7,7 @@ from Bio.Seq import Seq
 from igraph import *
 
 # Create logger
-logger = logging.getLogger("reneo 0.3.0")
+logger = logging.getLogger("reneo 0.3.1")
 
 
 class BidirectionalError(Exception):
