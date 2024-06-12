@@ -56,6 +56,8 @@ You can refer to further instructions at [https://www.gurobi.com/academia/academ
 
 ### Setting up databases
 
+Run the following command to download and set up the databases used in Reneo.
+
 ```bash
 reneo install
 ```
