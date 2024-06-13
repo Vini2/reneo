@@ -86,8 +86,8 @@ reneo test
 
 ```bash
 # Run Reneo
-# locally: using 8 threads (default is 1 thread)
-reneo run --input assembly_graph.gfa --reads fastq/ --threads 8
+# locally: using 16 threads (default is 8 threads)
+reneo run --input assembly_graph.gfa --reads fastq/ --threads 16
 ```
 
 
