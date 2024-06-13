@@ -24,6 +24,7 @@ rule run_reneo:
         mgfrac = config['mgfrac'],
         evalue = config['evalue'],
         hmmscore = config['hmmscore'],
+        nvogs = config['nvogs'],
         covtol = config['covtol'],
         alpha = config['alpha'],
         output = RESDIR,

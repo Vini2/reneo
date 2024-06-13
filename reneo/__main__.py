@@ -161,7 +161,7 @@ def run_options(func):
             "--evalue",
             default=1e-10,
             required=False,
-            help="maximum e-value for phrog annotations",
+            help="maximum e-value for vog annotations",
             type=float,
             show_default=True,
         ),
@@ -171,6 +171,14 @@ def run_options(func):
             required=False,
             help="minimum hmm score for vog annotations",
             type=float,
+            show_default=True,
+        ),
+        click.option(
+            "--nvogs",
+            default=10,
+            required=False,
+            help="minimum number of vogs to consider a component",
+            type=int,
             show_default=True,
         ),
         click.option(

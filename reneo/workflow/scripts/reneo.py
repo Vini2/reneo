@@ -1361,6 +1361,9 @@ def main(**kwargs):
         f"Minimum hmm score for vog annotations: {kwargs['hmmscore']}"
     )
     kwargs["logger"].info(
+        f"Minimum number of vogs to consider a component: {kwargs['nvogs']}"
+    )
+    kwargs["logger"].info(
         f"Coverage tolerance for extending subpaths: {kwargs['covtol']}"
     )
     kwargs["logger"].info(
@@ -1622,6 +1625,7 @@ if __name__ == "__main__":
         mgfrac=float(snakemake.params.mgfrac),
         evalue=float(snakemake.params.evalue),
         hmmscore=float(snakemake.params.hmmscore),
+        nvogs = int(snakemake.params.nvogs),
         covtol=float(snakemake.params.covtol),
         alpha=float(snakemake.params.alpha),
         output=snakemake.params.output,
