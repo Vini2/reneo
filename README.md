@@ -103,8 +103,8 @@ Reneo uses the [Gurobi](https://www.gurobi.com/) implementation of [MFD-ILP](htt
 
 ## Citation
 
-The Reneo manuscript is currently in preparation. In the meantime, please cite Reneo as
+Reneo is a work in progress and the manuscript is currently in preparation. In the meantime, please cite Reneo as
 
 ```
-V Mallawaarachchi, MJ Roach, P Decewicz, B Papudeshi, SR Grigson, G Bouras, LK Inglis, SK Giles, EA Dinsdale and RA Edwards (2023). Reneo: Unraveling Viral Genomes from Metagenomes. DOI: 10.5281/zenodo.8263066
+V Mallawaarachchi, MJ Roach, P Decewicz, B Papudeshi, SR Grigson, G Bouras, LK Inglis, SK Giles, EA Dinsdale and RA Edwards (2023). Reneo: Unraveling Viral Genomes from Metagenomes. Available at https://github.com/Vini2/reneo DOI: 10.5281/zenodo.8263066
 ```
