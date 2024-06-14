@@ -104,6 +104,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
         in_degree = []
         out_degree = []
 
+        case_name = ""
+
         # Case 2 components
         if len(candidate_nodes) == 2:
             all_self_looped = True
@@ -134,6 +136,10 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         unitig2 = candidate_nodes[target_vertex_id]
 
                 if unitig1 != "" and unitig2 != "":
+
+                    # Case 2 - both are circular
+                    case_name = "case2_circular"
+
                     unitig1_name = kwargs["unitig_names"][unitig1]
                     unitig2_name = kwargs["unitig_names"][unitig2]
 
@@ -189,7 +195,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                         genome_path = GenomePath(
                             f"virus_comp_{my_count}_cycle_{cycle_number}",
-                            "case2",
+                            case_name,
                             [
                                 f"{repeat_unitig_name}+",
                                 f"{unitig_name}+",
@@ -210,6 +216,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
         # Case 3 components
         elif len(candidate_nodes) > 2 and len(candidate_nodes) <= kwargs["compcount"]:
+
+            case_name = "case3_circular"
+
             # Create initial directed graph with coverage values
             # ----------------------------------------------------------------------
             G_edge = nx.DiGraph()
@@ -697,7 +706,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                         # Create GenomePath object with path details
                                         genome_path = GenomePath(
                                             f"virus_comp_{my_count}_cycle_{cycle_number}",
-                                            "case3_circular",
+                                            case_name,
                                             [x for x in path_order],
                                             [
                                                 kwargs["unitig_names_rev"][x[:-1]]
@@ -742,6 +751,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 kwargs["logger"].debug(
                     f"No cycles detected. Found a complex linear component."
                 )
+
+                case_name = "case3_linear"
 
                 results["linear_components"].add(my_count)
 
@@ -1136,7 +1147,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             # Create GenomePath object with path details
                                             genome_path = GenomePath(
                                                 f"virus_comp_{my_count}_cycle_{cycle_number}",
-                                                "case3_linear",
+                                                case_name,
                                                 [x for x in path_order],
                                                 [
                                                     kwargs["unitig_names_rev"][x[:-1]]
