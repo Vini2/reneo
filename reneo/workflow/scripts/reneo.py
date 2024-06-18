@@ -1403,6 +1403,12 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 and len(in_degree) > 0
                 and len(out_degree) > 0
             ):
+                coverage_frac = (
+                    max(path_coverages) / min(path_coverages)
+                    if min(path_coverages) > 0
+                    else 1
+                )
+
                 # Create GenomeComponent object with component details
                 genome_comp = GenomeComponent(
                     f"virus_comp_{my_count}",
@@ -1425,7 +1431,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     / path_lengths[path_coverages.index(min(path_coverages))],
                     max(path_coverages),
                     min(path_coverages),
-                    max(path_coverages) / min(path_coverages),
+                    coverage_frac,
                     frac_unitigs,
                 )
                 results["all_components"].append(genome_comp)
