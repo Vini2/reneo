@@ -1,5 +1,6 @@
-import networkx as nx
 import tempfile
+
+import networkx as nx
 
 from .FD_Inexact import SolveInstances
 

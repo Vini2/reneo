@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 import logging
-import sys
-import time
 import pickle
-import threading
 import queue
+import sys
+import threading
+import time
+
 import networkx as nx
 from igraph import *
-
 from reneo_utils import component_utils, edge_graph_utils, flow_utils, gene_utils
 from reneo_utils.coverage_utils import get_unitig_coverage
 from reneo_utils.genome_utils import GenomeComponent, GenomePath
@@ -21,7 +21,6 @@ from reneo_utils.output_utils import (
     write_res_genome_info,
     write_unitigs,
 )
-
 
 __author__ = "Vijini Mallawaarachchi"
 __copyright__ = "Copyright 2022, Reneo Project"
@@ -112,15 +111,23 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
             one_circular = False
 
             if (
-                kwargs["unitig_names"][candidate_nodes[0]] in kwargs["self_looped_nodes"]
-                and kwargs["unitig_names"][candidate_nodes[1]] in kwargs["self_looped_nodes"]
+                kwargs["unitig_names"][candidate_nodes[0]]
+                in kwargs["self_looped_nodes"]
+                and kwargs["unitig_names"][candidate_nodes[1]]
+                in kwargs["self_looped_nodes"]
             ):
                 all_self_looped = True
             else:
-                if kwargs["unitig_names"][candidate_nodes[0]] in kwargs["self_looped_nodes"]:
+                if (
+                    kwargs["unitig_names"][candidate_nodes[0]]
+                    in kwargs["self_looped_nodes"]
+                ):
                     one_circular = True
                     all_self_looped = False
-                if kwargs["unitig_names"][candidate_nodes[1]] in kwargs["self_looped_nodes"]:
+                if (
+                    kwargs["unitig_names"][candidate_nodes[1]]
+                    in kwargs["self_looped_nodes"]
+                ):
                     one_circular = True
                     all_self_looped = False
 
@@ -145,7 +152,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                 # Case 2 - both are circular
                 if all_self_looped:
-                    
+
                     case_name = "case2_circular"
 
                     results["case2_found"].add(my_count)
@@ -155,7 +162,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     results["virus_like_edges"] = results["virus_like_edges"].union(
                         set(candidate_nodes)
                     )
-                    comp_resolved_edges = comp_resolved_edges.union(set(candidate_nodes))
+                    comp_resolved_edges = comp_resolved_edges.union(
+                        set(candidate_nodes)
+                    )
 
                     unitig_to_consider = -1
                     unitig_name = ""
@@ -205,18 +214,22 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         )
 
                         genome_path = GenomePath(
-                            id = f"virus_comp_{my_count}_cycle_{cycle_number}",
-                            bubble_case = case_name,
-                            node_order = [
+                            id=f"virus_comp_{my_count}_cycle_{cycle_number}",
+                            bubble_case=case_name,
+                            node_order=[
                                 f"{repeat_unitig_name}+",
                                 f"{unitig_name}+",
                                 f"{repeat_unitig_name}-",
                             ],
-                            node_id_order = [repeat_unitig, unitig_to_consider, repeat_unitig],
-                            path = path_string,
-                            coverage = int(kwargs["unitig_coverages"][unitig_name]),
-                            length = len(path_string),
-                            gc = (path_string.count("G") + path_string.count("C"))
+                            node_id_order=[
+                                repeat_unitig,
+                                unitig_to_consider,
+                                repeat_unitig,
+                            ],
+                            path=path_string,
+                            coverage=int(kwargs["unitig_coverages"][unitig_name]),
+                            length=len(path_string),
+                            gc=(path_string.count("G") + path_string.count("C"))
                             / len(path_string)
                             * 100,
                         )
@@ -237,7 +250,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     results["virus_like_edges"] = results["virus_like_edges"].union(
                         set(candidate_nodes)
                     )
-                    comp_resolved_edges = comp_resolved_edges.union(set(candidate_nodes))
+                    comp_resolved_edges = comp_resolved_edges.union(
+                        set(candidate_nodes)
+                    )
 
                     unitig_to_consider = -1
                     unitig_name = ""
@@ -285,12 +300,16 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         path_string = (
                             str(
                                 kwargs["graph_unitigs"][unitig_name][
-                                    kwargs["link_overlap"][(repeat_unitig, unitig_to_consider)] :
+                                    kwargs["link_overlap"][
+                                        (repeat_unitig, unitig_to_consider)
+                                    ] :
                                 ]
                             )
                             + str(
                                 kwargs["graph_unitigs"][repeat_unitig_name][
-                                    kwargs["link_overlap"][(unitig_to_consider, repeat_unitig)] :
+                                    kwargs["link_overlap"][
+                                        (unitig_to_consider, repeat_unitig)
+                                    ] :
                                 ]
                             )
                             * repeat_count
@@ -305,20 +324,22 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         ]
 
                         repeat_order = f"{repeat_unitig_name}:fwd," * repeat_count
-                        path_with_repeats_human = f"{unitig_name}:fwd,{repeat_order[:-1]}"
+                        path_with_repeats_human = (
+                            f"{unitig_name}:fwd,{repeat_order[:-1]}"
+                        )
                         node_id_order_with_repeats = [unitig_to_consider] + [
                             repeat_unitig for x in range(repeat_count)
                         ]
 
                         genome_path = GenomePath(
-                            id = f"virus_comp_{my_count}_cycle_{cycle_number}",
-                            bubble_case = case_name,
-                            node_order = path_with_repeats,
-                            node_id_order = node_id_order_with_repeats,
-                            path = path_string,
-                            coverage = int(kwargs["unitig_coverages"][unitig_name]),
-                            length = len(path_string),
-                            gc = (path_string.count("G") + path_string.count("C"))
+                            id=f"virus_comp_{my_count}_cycle_{cycle_number}",
+                            bubble_case=case_name,
+                            node_order=path_with_repeats,
+                            node_id_order=node_id_order_with_repeats,
+                            path=path_string,
+                            coverage=int(kwargs["unitig_coverages"][unitig_name]),
+                            length=len(path_string),
+                            gc=(path_string.count("G") + path_string.count("C"))
                             / len(path_string)
                             * 100,
                         )
@@ -718,9 +739,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     "subpaths": subpaths,
                 }
                 kwargs["logger"].debug(f"G_mfd: {G_mfd}")
-                solution_paths = flow_utils.solve_mfd(
-                    G_mfd, kwargs["maxpaths"], 1
-                )
+                solution_paths = flow_utils.solve_mfd(G_mfd, kwargs["maxpaths"], 1)
                 kwargs["logger"].debug(f"Number of paths found: {len(solution_paths)}")
 
                 results["cycle_components"].add(my_count)
@@ -818,17 +837,17 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                                         # Create GenomePath object with path details
                                         genome_path = GenomePath(
-                                            id = f"virus_comp_{my_count}_cycle_{cycle_number}",
-                                            bubble_case = case_name,
-                                            node_order = [x for x in path_order],
-                                            node_id_order = [
+                                            id=f"virus_comp_{my_count}_cycle_{cycle_number}",
+                                            bubble_case=case_name,
+                                            node_order=[x for x in path_order],
+                                            node_id_order=[
                                                 kwargs["unitig_names_rev"][x[:-1]]
                                                 for x in path_order
                                             ],
-                                            path = path_string,
-                                            coverage = int(coverage_val),
-                                            length = total_length,
-                                            gc = (
+                                            path=path_string,
+                                            coverage=int(coverage_val),
+                                            length=total_length,
+                                            gc=(
                                                 path_string.count("G")
                                                 + path_string.count("C")
                                             )
@@ -884,8 +903,12 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                 if len(source_candidates) > 0 and len(sink_candidates) > 0:
 
-                    source_node_indices = [kwargs["unitig_names_rev"][x[:-1]] for x in source_candidates]
-                    sink_node_indices = [kwargs["unitig_names_rev"][x[:-1]] for x in sink_candidates]
+                    source_node_indices = [
+                        kwargs["unitig_names_rev"][x[:-1]] for x in source_candidates
+                    ]
+                    sink_node_indices = [
+                        kwargs["unitig_names_rev"][x[:-1]] for x in sink_candidates
+                    ]
 
                     # Create refined directed graph for flow network
                     # ----------------------------------------------------------------------
@@ -1016,7 +1039,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                     u_pred_name = kwargs["unitig_names_rev"][
                                         u_pred[:-1]
                                     ]
-                                    u_pred_index = candidate_nodes.index(u_pred_name) + 1
+                                    u_pred_index = (
+                                        candidate_nodes.index(u_pred_name) + 1
+                                    )
                                     u_pred_cov = kwargs["unitig_coverages"][u_pred[:-1]]
                                     u_cov = kwargs["unitig_coverages"][u[:-1]]
 
@@ -1044,7 +1069,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                     v_succ_name = kwargs["unitig_names_rev"][
                                         v_succ[:-1]
                                     ]
-                                    v_succ_index = candidate_nodes.index(v_succ_name) + 1
+                                    v_succ_index = (
+                                        candidate_nodes.index(v_succ_name) + 1
+                                    )
                                     v_succ_cov = kwargs["unitig_coverages"][v_succ[:-1]]
                                     v_cov = kwargs["unitig_coverages"][v[:-1]]
 
@@ -1085,7 +1112,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                         u_pred_name = kwargs["unitig_names_rev"][
                                             u_pred[:-1]
                                         ]
-                                        u_pred_index = candidate_nodes.index(u_pred_name) + 1
+                                        u_pred_index = (
+                                            candidate_nodes.index(u_pred_name) + 1
+                                        )
                                         if (
                                             (v_index - 1) not in source_node_indices
                                             and (u_index - 1) not in source_node_indices
@@ -1111,9 +1140,12 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                         v_succ_name = kwargs["unitig_names_rev"][
                                             v_succ[:-1]
                                         ]
-                                        v_succ_index = candidate_nodes.index(v_succ_name) + 1
+                                        v_succ_index = (
+                                            candidate_nodes.index(v_succ_name) + 1
+                                        )
                                         if (
-                                            (v_succ_index - 1) not in source_node_indices
+                                            (v_succ_index - 1)
+                                            not in source_node_indices
                                             and (u_index - 1) not in source_node_indices
                                             and (v_index - 1) not in source_node_indices
                                             and (v_index - 1) not in sink_node_indices
@@ -1132,7 +1164,10 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     # Add common start to source links
                     for source_v in source_candidates:
                         source_node_index = (
-                            candidate_nodes.index(kwargs["unitig_names_rev"][source_v[:-1]]) + 1
+                            candidate_nodes.index(
+                                kwargs["unitig_names_rev"][source_v[:-1]]
+                            )
+                            + 1
                         )
                         source_node_cov = kwargs["unitig_coverages"][source_v[:-1]]
                         cov_upper_bound = int(max_comp_cov * kwargs["alpha"])
@@ -1152,7 +1187,10 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     # Add common sink to end links
                     for sink_v in sink_candidates:
                         sink_node_index = (
-                            candidate_nodes.index(kwargs["unitig_names_rev"][sink_v[:-1]]) + 1
+                            candidate_nodes.index(
+                                kwargs["unitig_names_rev"][sink_v[:-1]]
+                            )
+                            + 1
                         )
                         sink_node_cov = kwargs["unitig_coverages"][sink_v[:-1]]
                         cov_upper_bound = int(max_comp_cov * kwargs["alpha"])
@@ -1183,9 +1221,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         "subpaths": subpaths,
                     }
                     kwargs["logger"].debug(f"G_mfd: {G_mfd}")
-                    solution_paths = flow_utils.solve_mfd(
-                        G_mfd, kwargs["maxpaths"], 1
-                    )
+                    solution_paths = flow_utils.solve_mfd(G_mfd, kwargs["maxpaths"], 1)
                     kwargs["logger"].debug(
                         f"Number of paths found: {len(solution_paths)}"
                     )
@@ -1240,7 +1276,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             for path_edge in candidate_paths[0]:
                                                 if not (
                                                     path_edge == 0
-                                                    or path_edge == len(candidate_nodes) + 1
+                                                    or path_edge
+                                                    == len(candidate_nodes) + 1
                                                 ):
                                                     path_order.append(
                                                         edge_list_indices[path_edge]
@@ -1291,17 +1328,17 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                                             # Create GenomePath object with path details
                                             genome_path = GenomePath(
-                                                id = f"virus_comp_{my_count}_cycle_{cycle_number}",
-                                                bubble_case = case_name,
-                                                node_order = [x for x in path_order],
-                                                node_id_order = [
+                                                id=f"virus_comp_{my_count}_cycle_{cycle_number}",
+                                                bubble_case=case_name,
+                                                node_order=[x for x in path_order],
+                                                node_id_order=[
                                                     kwargs["unitig_names_rev"][x[:-1]]
                                                     for x in path_order
                                                 ],
-                                                path = path_string,
-                                                coverage = int(coverage_val),
-                                                length = total_length,
-                                                gc = (
+                                                path=path_string,
+                                                coverage=int(coverage_val),
+                                                length=total_length,
+                                                gc=(
                                                     path_string.count("G")
                                                     + path_string.count("C")
                                                 )
@@ -1353,14 +1390,14 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
             # Create GenomePath object with path details
             genome_path = GenomePath(
-                id = f"virus_comp_{my_count}_cycle_{cycle_number}",
-                bubble_case = case_name,
-                node_order = [kwargs["unitig_names"][candidate_nodes[0]]],
-                node_id_order = [candidate_nodes[0]],
-                path = path_string,
-                coverage = int(kwargs["unitig_coverages"][unitig_name]),
-                length = len(kwargs["graph_unitigs"][unitig_name]),
-                gc = (path_string.count("G") + path_string.count("C"))
+                id=f"virus_comp_{my_count}_cycle_{cycle_number}",
+                bubble_case=case_name,
+                node_order=[kwargs["unitig_names"][candidate_nodes[0]]],
+                node_id_order=[candidate_nodes[0]],
+                path=path_string,
+                coverage=int(kwargs["unitig_coverages"][unitig_name]),
+                length=len(kwargs["graph_unitigs"][unitig_name]),
+                gc=(path_string.count("G") + path_string.count("C"))
                 / len(path_string)
                 * 100,
             )
@@ -1640,9 +1677,9 @@ def main(**kwargs):
         results = merge_results(results, r)
 
     # Get unresolved edges
-    results["unresolved_virus_like_edges"] = results[
-        "all_virus_like_edges"
-    ].difference(results["resolved_edges"])
+    results["unresolved_virus_like_edges"] = results["all_virus_like_edges"].difference(
+        results["resolved_edges"]
+    )
 
     # write all the final genomic paths
     for final_genomic_paths in results["genome_path_sets"]:
@@ -1787,7 +1824,7 @@ if __name__ == "__main__":
         mgfrac=float(snakemake.params.mgfrac),
         evalue=float(snakemake.params.evalue),
         hmmscore=float(snakemake.params.hmmscore),
-        nvogs = int(snakemake.params.nvogs),
+        nvogs=int(snakemake.params.nvogs),
         covtol=float(snakemake.params.covtol),
         alpha=float(snakemake.params.alpha),
         output=snakemake.params.output,

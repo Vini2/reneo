@@ -1,8 +1,7 @@
 import logging
+import pickle
 import sys
 from collections import defaultdict
-import pickle
-
 
 __author__ = "Michael Roach"
 __copyright__ = "Copyright 2022, Reneo Project"

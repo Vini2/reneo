@@ -1,8 +1,8 @@
 import glob
 import os
 import pickle
-import threading
 import queue
+import threading
 from collections import defaultdict
 
 import pysam
@@ -92,7 +92,9 @@ def get_junction_pe_coverage(bam_path, output, nthreads):
         threads = []
         for _ in range(nthreads):
             bam_queue.put(None)
-            thread = threading.Thread(target=find_links_in_bam, args=(bam_queue, result_queue))
+            thread = threading.Thread(
+                target=find_links_in_bam, args=(bam_queue, result_queue)
+            )
             threads.append(thread)
             thread.start()
 

@@ -7,10 +7,10 @@
 import logging
 import os
 import subprocess
-from Bio import SeqIO
 from collections import defaultdict
 
 import pandas as pd
+from Bio import SeqIO
 
 __author__ = "Vijini Mallawaarachchi"
 __copyright__ = "Copyright 2023, Reneo Project"

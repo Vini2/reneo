@@ -1,10 +1,10 @@
 import logging
-import sys
-from reneo_utils.coverage_utils import read_pair_generator
-from collections import defaultdict
-import pysam
 import pickle
+import sys
+from collections import defaultdict
 
+import pysam
+from reneo_utils.coverage_utils import read_pair_generator
 
 __author__ = "Michael Roach"
 __copyright__ = "Copyright 2022, Reneo Project"

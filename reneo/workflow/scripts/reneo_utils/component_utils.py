@@ -41,8 +41,12 @@ def get_components(**kwargs):
 
             if (
                 vogs_present
-                and (kwargs["unitig_names"][unitig] in kwargs["circular"] or len(vogs_found) >= kwargs['nvogs'])
-                and kwargs["edges_lengths"][kwargs["unitig_names"][unitig]] > kwargs["minlength"]
+                and (
+                    kwargs["unitig_names"][unitig] in kwargs["circular"]
+                    or len(vogs_found) >= kwargs["nvogs"]
+                )
+                and kwargs["edges_lengths"][kwargs["unitig_names"][unitig]]
+                > kwargs["minlength"]
             ):
                 pruned_vs[i] = component
                 comp_vogs[i] = vogs_found
