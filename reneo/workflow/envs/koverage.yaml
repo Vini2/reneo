@@ -6,3 +6,4 @@ dependencies:
     - pip
     - pip:
         - koverage>=0.1.8
+        - numpy==1.26.4
