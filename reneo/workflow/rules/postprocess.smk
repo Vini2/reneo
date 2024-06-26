@@ -37,6 +37,7 @@ rule koverage_genomes:
             --ref {input.sequences} \
             --threads {threads} \
             --output {params.out_dir} \
+            --no-report \
             {params.profile}
         """
 

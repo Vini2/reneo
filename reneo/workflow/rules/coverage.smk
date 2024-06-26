@@ -42,6 +42,7 @@ rule koverage:
             --threads {threads} \
             --output {params.out_dir} \
             --configfile {params.configfile} \
+            --no-report \
             {params.profile} \
             {params.koverage} 
         """
