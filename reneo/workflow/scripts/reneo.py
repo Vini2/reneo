@@ -605,7 +605,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         # Add subpaths
                         if juction_cov >= kwargs["mincov"]:
                             kwargs["logger"].debug(
-                                f"Adding subpath {[u_index, final_vertex]}"
+                                f"Adding subpath {[u_name, v_name]}"
                             )
                             subpaths[subpath_count] = [u_index, final_vertex]
                             subpath_count += 1
@@ -620,14 +620,18 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 u_pred_index = candidate_nodes.index(u_pred_name)
                                 u_pred_cov = kwargs["unitig_coverages"][u_pred[:-1]]
                                 u_cov = kwargs["unitig_coverages"][u[:-1]]
+                                v_cov = kwargs["unitig_coverages"][v[:-1]]
 
                                 if (
                                     final_vertex != 0
                                     and u_index != 0
                                     and u_pred_index != final_vertex
                                 ):
+                                    kwargs["logger"].debug(
+                                        f"Coverage across - {u_pred}:{u_pred_cov}, {u}:{u_cov}, {v}:{v_cov}"
+                                    )
                                     if (
-                                        abs(min(u_pred_cov, u_cov) - cov["weight"])
+                                        abs(min(u_pred_cov, u_cov) - min(u_cov, v_cov))
                                         < kwargs["covtol"]
                                     ):
                                         subpaths[subpath_count] = [
@@ -636,7 +640,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             final_vertex,
                                         ]
                                         kwargs["logger"].debug(
-                                            f"Extending subpath based on predecessor coverage {[u_pred_index, u_index, final_vertex]}"
+                                            f"Extending subpath based on predecessor coverage {[u_pred, u, v]}, {[u_pred_cov, u_cov, v_cov]}"
                                         )
                                         subpath_count += 1
 
@@ -646,6 +650,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 v_succ_index = candidate_nodes.index(v_succ_name)
                                 v_succ_cov = kwargs["unitig_coverages"][v_succ[:-1]]
                                 v_cov = kwargs["unitig_coverages"][v[:-1]]
+                                u_cov = kwargs["unitig_coverages"][u[:-1]]
 
                                 if (
                                     v_succ_index != 0
@@ -654,8 +659,11 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                     and final_vertex != len(candidate_nodes)
                                     and v_succ_index != u_index
                                 ):
+                                    kwargs["logger"].debug(
+                                        f"Coverage across - {u}:{u_cov}, {v}:{v_cov}, {v_succ}:{v_succ_cov}"
+                                    )
                                     if (
-                                        abs(min(v_succ_cov, v_cov) - cov["weight"])
+                                        abs(min(v_succ_cov, v_cov) - min(u_cov, v_cov))
                                         < kwargs["covtol"]
                                     ):
                                         subpaths[subpath_count] = [
@@ -664,7 +672,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             v_succ_index,
                                         ]
                                         kwargs["logger"].debug(
-                                            f"Extending subpath based on successor coverage {[u_index, final_vertex, v_succ_index]}"
+                                            f"Extending subpath based on successor coverage {[u, v, v_succ]}, {[u_cov, v_cov, v_succ_cov]}"
                                         )
                                         subpath_count += 1
 
@@ -696,7 +704,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             final_vertex,
                                         ]
                                         kwargs["logger"].debug(
-                                            f"Extending subpath {[u_pred_index, u_index, final_vertex]}"
+                                            f"Extending subpath {[u_pred, u, v]}"
                                         )
                                         subpath_count += 1
 
@@ -724,7 +732,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             v_succ_index,
                                         ]
                                         kwargs["logger"].debug(
-                                            f"Extending subpath {[u_index, final_vertex, v_succ_index]}"
+                                            f"Extending subpath {[u, v, v_succ]}"
                                         )
                                         subpath_count += 1
 
@@ -1025,7 +1033,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                             # Add subpaths
                             if juction_cov >= kwargs["mincov"]:
                                 kwargs["logger"].debug(
-                                    f"Adding subpath {[u_index, v_index]}"
+                                    f"Adding subpath {[u_name, v_name]}"
                                 )
                                 subpaths[subpath_count] = [u_index, v_index]
                                 subpath_count += 1
@@ -1044,14 +1052,18 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                     )
                                     u_pred_cov = kwargs["unitig_coverages"][u_pred[:-1]]
                                     u_cov = kwargs["unitig_coverages"][u[:-1]]
+                                    v_cov = kwargs["unitig_coverages"][v[:-1]]
 
                                     if (
                                         (v_index - 1) not in source_node_indices
                                         and (u_index - 1) not in source_node_indices
                                         and u_pred_index != v_index
                                     ):
+                                        kwargs["logger"].debug(
+                                            f"Coverage across - {u_pred}:{u_pred_cov}, {u}:{u_cov}, {v}:{v_cov}"
+                                        )
                                         if (
-                                            abs(min(u_pred_cov, u_cov) - cov["weight"])
+                                            abs(min(u_pred_cov, u_cov) - min(u_cov, v_cov))
                                             < kwargs["covtol"]
                                         ):
                                             subpaths[subpath_count] = [
@@ -1060,7 +1072,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                 v_index,
                                             ]
                                             kwargs["logger"].debug(
-                                                f"Extending subpath based on predecessor coverage {[u_pred_index, u_index, v_index]}"
+                                                f"Extending subpath based on predecessor coverage {[u_pred, u, v]}, {[u_pred_cov, u_cov, v_cov]}"
                                             )
                                             subpath_count += 1
 
@@ -1074,6 +1086,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                     )
                                     v_succ_cov = kwargs["unitig_coverages"][v_succ[:-1]]
                                     v_cov = kwargs["unitig_coverages"][v[:-1]]
+                                    u_cov = kwargs["unitig_coverages"][v[:-1]]
 
                                     if (
                                         (v_succ_index - 1) not in source_node_indices
@@ -1082,8 +1095,11 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                         and (v_index - 1) not in sink_node_indices
                                         and v_succ_index != u_index
                                     ):
+                                        kwargs["logger"].debug(
+                                            f"Coverage across - {u}:{u_cov}, {v}:{v_cov}, {v_succ}:{v_succ_cov}"
+                                        )
                                         if (
-                                            abs(min(v_succ_cov, v_cov) - cov["weight"])
+                                            abs(min(v_succ_cov, v_cov) - min(u_cov, v_cov))
                                             < kwargs["covtol"]
                                         ):
                                             subpaths[subpath_count] = [
@@ -1092,7 +1108,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                 v_succ_index,
                                             ]
                                             kwargs["logger"].debug(
-                                                f"Extending subpath based on successor coverage {[u_index, v_index, v_succ_index]}"
+                                                f"Extending subpath based on successor coverage {[u, v, v_succ]}, {[u_cov, v_cov, v_succ_cov]}"
                                             )
                                             subpath_count += 1
 
@@ -1126,7 +1142,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                 v_index,
                                             ]
                                             kwargs["logger"].debug(
-                                                f"Extending subpath {[u_pred_index, u_index, v_index]}"
+                                                f"Extending subpath {[u_pred, u, v]}"
                                             )
                                             subpath_count += 1
 
@@ -1157,7 +1173,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                 v_succ_index,
                                             ]
                                             kwargs["logger"].debug(
-                                                f"Extending subpath {[u_index, v_index, v_succ_index]}"
+                                                f"Extending subpath {[u, v, v_succ]}"
                                             )
                                             subpath_count += 1
 
