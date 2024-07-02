@@ -399,10 +399,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         if node in kwargs["unitig_coverages"]:
                             cov_2 = kwargs["unitig_coverages"][node]
 
-                        if min([cov_1, cov_2]) != 0:
-                            min_cov = min([cov_1, cov_2])
-                        else:
-                            min_cov = max([cov_1, cov_2])
+                        min_cov = min([cov_1, cov_2]) if min([cov_1, cov_2]) != 0 else max([cov_1, cov_2])
 
                         for edge in kwargs["oriented_links"][unitig_name][node]:
                             cycle_edges[(unitig_name + edge[0], node + edge[1])] = int(
@@ -554,6 +551,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                 visited_edges = []
 
+                junctions_visited = []
+
                 kwargs["logger"].debug(f"G_edge.nodes: {list(G_edge.nodes)}")
                 kwargs["logger"].debug(f"G_edge.edges: {G_edge.edges(data=True)}")
 
@@ -588,7 +587,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                         if juction_cov == 0:
                             network_edges.append(
-                                (u_index, final_vertex, 0, cov_upper_bound)
+                                (u_index, final_vertex, cov_lower_bound, cov_upper_bound)
                             )
                         else:
                             network_edges.append(
@@ -602,7 +601,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                         visited_edges.append((u_index, final_vertex))
 
-                        # Add subpaths
+                        # Add subpaths based on junction coverage
                         if juction_cov >= kwargs["mincov"]:
                             kwargs["logger"].debug(
                                 f"Adding subpath {[u_name, v_name]}"
@@ -610,84 +609,17 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                             subpaths[subpath_count] = [u_index, final_vertex]
                             subpath_count += 1
 
-                            # Extend subpaths using coverages of successors and predecessors
-                            # u_pred = [x for x in G_edge.predecessors(u)]
-                            # v_succ = [x for x in G_edge.successors(v)]
-
-                            # Extend subpath using coverages of predecessors
-                            for u_pred in G_edge.predecessors(u):
-                                u_pred_name = kwargs["unitig_names_rev"][u_pred[:-1]]
-                                u_pred_index = candidate_nodes.index(u_pred_name)
-                                u_pred_cov = kwargs["unitig_coverages"][u_pred[:-1]]
-                                u_cov = kwargs["unitig_coverages"][u[:-1]]
-                                v_cov = kwargs["unitig_coverages"][v[:-1]]
-
-                                if (
-                                    final_vertex != 0
-                                    and u_index != 0
-                                    and u_pred_index != final_vertex
-                                ):
-                                    kwargs["logger"].debug(
-                                        f"Coverage across - {u_pred}:{u_pred_cov}, {u}:{u_cov}, {v}:{v_cov}"
-                                    )
-                                    if (
-                                        abs(min(u_pred_cov, u_cov) - min(u_cov, v_cov))
-                                        < kwargs["covtol"]
-                                    ):
-                                        subpaths[subpath_count] = [
-                                            u_pred_index,
-                                            u_index,
-                                            final_vertex,
-                                        ]
-                                        kwargs["logger"].debug(
-                                            f"Extending subpath based on predecessor coverage {[u_pred, u, v]}, {[u_pred_cov, u_cov, v_cov]}"
-                                        )
-                                        subpath_count += 1
-
-                            # Extend subpath using coverages of successors
-                            for v_succ in G_edge.successors(v):
-                                v_succ_name = kwargs["unitig_names_rev"][v_succ[:-1]]
-                                v_succ_index = candidate_nodes.index(v_succ_name)
-                                v_succ_cov = kwargs["unitig_coverages"][v_succ[:-1]]
-                                v_cov = kwargs["unitig_coverages"][v[:-1]]
-                                u_cov = kwargs["unitig_coverages"][u[:-1]]
-
-                                if (
-                                    v_succ_index != 0
-                                    and u_index != 0
-                                    and final_vertex != 0
-                                    and final_vertex != len(candidate_nodes)
-                                    and v_succ_index != u_index
-                                ):
-                                    kwargs["logger"].debug(
-                                        f"Coverage across - {u}:{u_cov}, {v}:{v_cov}, {v_succ}:{v_succ_cov}"
-                                    )
-                                    if (
-                                        abs(min(v_succ_cov, v_cov) - min(u_cov, v_cov))
-                                        < kwargs["covtol"]
-                                    ):
-                                        subpaths[subpath_count] = [
-                                            u_index,
-                                            final_vertex,
-                                            v_succ_index,
-                                        ]
-                                        kwargs["logger"].debug(
-                                            f"Extending subpath based on successor coverage {[u, v, v_succ]}, {[u_cov, v_cov, v_succ_cov]}"
-                                        )
-                                        subpath_count += 1
-
+                        # Extend subpaths using coverages of successors and predecessors
                         else:
                             # Extend subpaths of l=3 based on paired-end reads
                             # aligned to successors and predecessors
-                            # u_pred = [x for x in G_edge.predecessors(u)]
-                            # v_succ = [x for x in G_edge.successors(v)]
 
                             for u_pred in G_edge.predecessors(u):
                                 if (
                                     kwargs["junction_pe_coverage"][
                                         (u_pred[:-1], v[:-1])
-                                    ]
-                                    > 0
+                                    ] > 0
+                                    and [u_pred, u, v] not in junctions_visited
                                 ):
                                     u_pred_name = kwargs["unitig_names_rev"][
                                         u_pred[:-1]
@@ -707,13 +639,14 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             f"Extending subpath {[u_pred, u, v]}"
                                         )
                                         subpath_count += 1
+                                        junctions_visited.append([u_pred, u, v])
 
                             for v_succ in G_edge.successors(v):
                                 if (
                                     kwargs["junction_pe_coverage"][
                                         (u[:-1], v_succ[:-1])
-                                    ]
-                                    > 0
+                                    ] > 0
+                                    and [u, v, v_succ] not in junctions_visited
                                 ):
                                     v_succ_name = kwargs["unitig_names_rev"][
                                         v_succ[:-1]
@@ -735,6 +668,89 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                             f"Extending subpath {[u, v, v_succ]}"
                                         )
                                         subpath_count += 1
+                                        junctions_visited.append([u, v, v_succ])
+
+                        # Extend subpath using coverages of predecessors
+                        kwargs["logger"].debug(
+                            f"Predecessors of {u}: {[x for x in G_edge.predecessors(u)]}"
+                        )
+                        for u_pred in G_edge.predecessors(u):
+                            u_pred_name = kwargs["unitig_names_rev"][u_pred[:-1]]
+                            u_pred_index = candidate_nodes.index(u_pred_name)
+                            u_pred_cov = kwargs["unitig_coverages"][u_pred[:-1]]
+                            u_cov = kwargs["unitig_coverages"][u[:-1]]
+                            v_cov = kwargs["unitig_coverages"][v[:-1]]
+
+                            if (
+                                [u_pred, u, v] not in junctions_visited
+                                and final_vertex != 0
+                                and u_index != 0
+                                and u_pred_index != final_vertex
+                            ):
+                                kwargs["logger"].debug(
+                                    f"Coverage across predecessor - {u_pred}:{u_pred_cov}, {u}:{u_cov}, {v}:{v_cov}"
+                                )
+
+                                left_weight = min(u_pred_cov, u_cov) if u_cov > 0 else max(u_pred_cov, u_cov)
+                                right_weight = min(u_cov, v_cov) if u_cov > 0 else max(u_cov, v_cov)
+
+                                if (
+                                    abs(left_weight - right_weight)
+                                    < kwargs["covtol"]
+                                ):
+                                    subpaths[subpath_count] = [
+                                        u_pred_index,
+                                        u_index,
+                                        final_vertex,
+                                    ]
+                                    kwargs["logger"].debug(
+                                        f"Extending subpath based on predecessor coverage {[u_pred, u, v]}, {[u_pred_cov, u_cov, v_cov]}"
+                                    )
+                                    subpath_count += 1
+
+                                    junctions_visited.append([u_pred, u, v])
+
+                        # Extend subpath using coverages of successors
+                        kwargs["logger"].debug(
+                            f"Successors of {v}: {[x for x in G_edge.successors(v)]}"
+                        )
+                        for v_succ in G_edge.successors(v):
+                            v_succ_name = kwargs["unitig_names_rev"][v_succ[:-1]]
+                            v_succ_index = candidate_nodes.index(v_succ_name)
+                            v_succ_cov = kwargs["unitig_coverages"][v_succ[:-1]]
+                            v_cov = kwargs["unitig_coverages"][v[:-1]]
+                            u_cov = kwargs["unitig_coverages"][u[:-1]]
+
+                            if (
+                                [u, v, v_succ] not in junctions_visited
+                                and v_succ_index != 0
+                                and u_index != 0
+                                and final_vertex != 0
+                                and final_vertex != len(candidate_nodes)
+                                and v_succ_index != u_index
+                            ):
+                                kwargs["logger"].debug(
+                                    f"Coverage across successor - {u}:{u_cov}, {v}:{v_cov}, {v_succ}:{v_succ_cov}"
+                                )
+
+                                left_weight = min(u_cov, v_cov) if v_cov > 0 else max(u_cov, v_cov)
+                                right_weight = min(v_succ_cov, v_cov) if v_cov > 0 else max(v_succ_cov, v_cov)
+
+                                if (
+                                    abs(left_weight - right_weight)
+                                    < kwargs["covtol"]
+                                ):
+                                    subpaths[subpath_count] = [
+                                        u_index,
+                                        final_vertex,
+                                        v_succ_index,
+                                    ]
+                                    kwargs["logger"].debug(
+                                        f"Extending subpath based on successor coverage {[u, v, v_succ]}, {[u_cov, v_cov, v_succ_cov]}"
+                                    )
+                                    subpath_count += 1
+
+                                    junctions_visited.append([u, v, v_succ])
 
                 kwargs["logger"].debug(f"edge_list_indices: {edge_list_indices}")
                 kwargs["logger"].debug(f"subpaths: {subpaths}")
@@ -987,6 +1003,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                     visited_edges = []
 
+                    junctions_visited = []
+
                     kwargs["logger"].debug(f"G_edge.nodes: {list(G_edge.nodes)}")
                     kwargs["logger"].debug(f"G_edge.edges: {G_edge.edges(data=True)}")
 
@@ -1030,7 +1048,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                             visited_edges.append((u_index, v_index))
 
-                            # Add subpaths
+                            # Add subpaths based on junction coverage
                             if juction_cov >= kwargs["mincov"]:
                                 kwargs["logger"].debug(
                                     f"Adding subpath {[u_name, v_name]}"
@@ -1038,92 +1056,17 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 subpaths[subpath_count] = [u_index, v_index]
                                 subpath_count += 1
 
-                                # Extend subpaths using coverages of successors and predecessors
-                                # u_pred = [x for x in G_edge.predecessors(u)]
-                                # v_succ = [x for x in G_edge.successors(v)]
-
-                                # Extend subpath using coverages of predecessors
-                                for u_pred in G_edge.predecessors(u):
-                                    u_pred_name = kwargs["unitig_names_rev"][
-                                        u_pred[:-1]
-                                    ]
-                                    u_pred_index = (
-                                        candidate_nodes.index(u_pred_name) + 1
-                                    )
-                                    u_pred_cov = kwargs["unitig_coverages"][u_pred[:-1]]
-                                    u_cov = kwargs["unitig_coverages"][u[:-1]]
-                                    v_cov = kwargs["unitig_coverages"][v[:-1]]
-
-                                    if (
-                                        (v_index - 1) not in source_node_indices
-                                        and (u_index - 1) not in source_node_indices
-                                        and u_pred_index != v_index
-                                    ):
-                                        kwargs["logger"].debug(
-                                            f"Coverage across - {u_pred}:{u_pred_cov}, {u}:{u_cov}, {v}:{v_cov}"
-                                        )
-                                        if (
-                                            abs(min(u_pred_cov, u_cov) - min(u_cov, v_cov))
-                                            < kwargs["covtol"]
-                                        ):
-                                            subpaths[subpath_count] = [
-                                                u_pred_index,
-                                                u_index,
-                                                v_index,
-                                            ]
-                                            kwargs["logger"].debug(
-                                                f"Extending subpath based on predecessor coverage {[u_pred, u, v]}, {[u_pred_cov, u_cov, v_cov]}"
-                                            )
-                                            subpath_count += 1
-
-                                # Extend subpath using coverages of successors
-                                for v_succ in G_edge.successors(v):
-                                    v_succ_name = kwargs["unitig_names_rev"][
-                                        v_succ[:-1]
-                                    ]
-                                    v_succ_index = (
-                                        candidate_nodes.index(v_succ_name) + 1
-                                    )
-                                    v_succ_cov = kwargs["unitig_coverages"][v_succ[:-1]]
-                                    v_cov = kwargs["unitig_coverages"][v[:-1]]
-                                    u_cov = kwargs["unitig_coverages"][v[:-1]]
-
-                                    if (
-                                        (v_succ_index - 1) not in source_node_indices
-                                        and (u_index - 1) not in source_node_indices
-                                        and (v_index - 1) not in source_node_indices
-                                        and (v_index - 1) not in sink_node_indices
-                                        and v_succ_index != u_index
-                                    ):
-                                        kwargs["logger"].debug(
-                                            f"Coverage across - {u}:{u_cov}, {v}:{v_cov}, {v_succ}:{v_succ_cov}"
-                                        )
-                                        if (
-                                            abs(min(v_succ_cov, v_cov) - min(u_cov, v_cov))
-                                            < kwargs["covtol"]
-                                        ):
-                                            subpaths[subpath_count] = [
-                                                u_index,
-                                                v_index,
-                                                v_succ_index,
-                                            ]
-                                            kwargs["logger"].debug(
-                                                f"Extending subpath based on successor coverage {[u, v, v_succ]}, {[u_cov, v_cov, v_succ_cov]}"
-                                            )
-                                            subpath_count += 1
-
+                            # Extend subpaths using coverages of successors and predecessors
                             else:
                                 # Extend subpaths of l=3 based on paired-end reads
                                 # aligned to successors and predecessors
-                                # u_pred = [x for x in G_edge.predecessors(u)]
-                                # v_succ = [x for x in G_edge.successors(v)]
 
                                 for u_pred in G_edge.predecessors(u):
                                     if (
                                         kwargs["junction_pe_coverage"][
                                             (u_pred[:-1], v[:-1])
-                                        ]
-                                        > 0
+                                        ] > 0
+                                        and [u_pred, u, v] not in junctions_visited
                                     ):
                                         u_pred_name = kwargs["unitig_names_rev"][
                                             u_pred[:-1]
@@ -1145,13 +1088,14 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                 f"Extending subpath {[u_pred, u, v]}"
                                             )
                                             subpath_count += 1
+                                            junctions_visited.append([u_pred, u, v])
 
                                 for v_succ in G_edge.successors(v):
                                     if (
                                         kwargs["junction_pe_coverage"][
                                             (u[:-1], v_succ[:-1])
-                                        ]
-                                        > 0
+                                        ] > 0
+                                        and [u, v, v_succ] not in junctions_visited
                                     ):
                                         v_succ_name = kwargs["unitig_names_rev"][
                                             v_succ[:-1]
@@ -1176,6 +1120,97 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                 f"Extending subpath {[u, v, v_succ]}"
                                             )
                                             subpath_count += 1
+                                            junctions_visited.append([u, v, v_succ])
+
+                            # Extend subpath using coverages of predecessors
+                            kwargs["logger"].debug(
+                                f"Predecessors of {u}: {[x for x in G_edge.predecessors(u)]}"
+                            )
+                            for u_pred in G_edge.predecessors(u):
+                                u_pred_name = kwargs["unitig_names_rev"][
+                                    u_pred[:-1]
+                                ]
+                                u_pred_index = (
+                                    candidate_nodes.index(u_pred_name) + 1
+                                )
+                                u_pred_cov = kwargs["unitig_coverages"][u_pred[:-1]]
+                                u_cov = kwargs["unitig_coverages"][u[:-1]]
+                                v_cov = kwargs["unitig_coverages"][v[:-1]]
+
+                                if (
+                                    [u_pred, u, v] not in junctions_visited
+                                    and (v_index - 1) not in source_node_indices
+                                    and (u_index - 1) not in source_node_indices
+                                    and u_pred_index != v_index
+                                ):
+                                    kwargs["logger"].debug(
+                                        f"Coverage across predecessor - {u_pred}:{u_pred_cov}, {u}:{u_cov}, {v}:{v_cov}"
+                                    )
+
+                                    left_weight = min(u_pred_cov, u_cov) if u_cov > 0 else max(u_pred_cov, u_cov)
+                                    right_weight = min(u_cov, v_cov) if u_cov > 0 else max(u_cov, v_cov)
+
+                                    if (
+                                        abs(left_weight - right_weight)
+                                        < kwargs["covtol"]
+                                    ):
+                                        subpaths[subpath_count] = [
+                                            u_pred_index,
+                                            u_index,
+                                            v_index,
+                                        ]
+                                        kwargs["logger"].debug(
+                                            f"Extending subpath based on predecessor coverage {[u_pred, u, v]}, {[u_pred_cov, u_cov, v_cov]}"
+                                        )
+                                        subpath_count += 1
+
+                                        junctions_visited.append([u_pred, u, v])
+
+                            # Extend subpath using coverages of successors
+                            kwargs["logger"].debug(
+                                f"Successors of {v}: {[x for x in G_edge.successors(v)]}"
+                            )
+                            for v_succ in G_edge.successors(v):
+                                v_succ_name = kwargs["unitig_names_rev"][
+                                    v_succ[:-1]
+                                ]
+                                v_succ_index = (
+                                    candidate_nodes.index(v_succ_name) + 1
+                                )
+                                v_succ_cov = kwargs["unitig_coverages"][v_succ[:-1]]
+                                v_cov = kwargs["unitig_coverages"][v[:-1]]
+                                u_cov = kwargs["unitig_coverages"][v[:-1]]
+
+                                if (
+                                    [u, v, v_succ] not in junctions_visited
+                                    and (v_succ_index - 1) not in source_node_indices
+                                    and (u_index - 1) not in source_node_indices
+                                    and (v_index - 1) not in source_node_indices
+                                    and (v_index - 1) not in sink_node_indices
+                                    and v_succ_index != u_index
+                                ):
+                                    kwargs["logger"].debug(
+                                        f"Coverage across successor - {u}:{u_cov}, {v}:{v_cov}, {v_succ}:{v_succ_cov}"
+                                    )
+
+                                    left_weight = min(u_cov, v_cov) if v_cov > 0 else max(u_cov, v_cov)
+                                    right_weight = min(v_succ_cov, v_cov) if v_cov > 0 else max(v_succ_cov, v_cov)
+
+                                    if (
+                                        abs(left_weight - right_weight)
+                                        < kwargs["covtol"]
+                                    ):
+                                        subpaths[subpath_count] = [
+                                            u_index,
+                                            v_index,
+                                            v_succ_index,
+                                        ]
+                                        kwargs["logger"].debug(
+                                            f"Extending subpath based on successor coverage {[u, v, v_succ]}, {[u_cov, v_cov, v_succ_cov]}"
+                                        )
+                                        subpath_count += 1
+
+                                        junctions_visited.append([u, v, v_succ])
 
                     # Add common start to source links
                     for source_v in source_candidates:
