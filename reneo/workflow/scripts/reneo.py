@@ -142,8 +142,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     unitig1 = candidate_nodes[source_vertex_id]
                     unitig2 = candidate_nodes[target_vertex_id]
 
-            unitig1_name = unitig_names[unitig1]
-            unitig2_name = unitig_names[unitig2]
+            unitig1_name = kwargs["unitig_names"][unitig1]
+            unitig2_name = kwargs["unitig_names"][unitig2]
 
             unitig1_len = len(str(kwargs["graph_unitigs"][unitig1_name]))
             unitig2_len = len(str(kwargs["graph_unitigs"][unitig2_name]))
