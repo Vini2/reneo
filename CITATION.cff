@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Mallawaarachchi"
+  given-names: "Vijini"
+  orcid: "0000-0002-2651-8719"
+- family-names: "Roach"
+  given-names: "Michael"
+  orcid: "0000-0003-1488-5148"
+- family-names: "Inglis"
+  given-names: "Laura"
+  orcid: "0000-0001-7919-8563"
+- family-names: "Edwards"
+  given-names: "Robert"
+  orcid: "0000-0001-8383-8949"
+title: "Reneo: Unraveling Viral Genomes from Metagenomes"
+version: 0.4.0
+doi: 10.5281/zenodo.8263065
+date-released: 2024-06-15
+url: "https://github.com/Vini2/reneo"
