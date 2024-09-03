@@ -345,7 +345,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         )
                         my_genomic_paths.append(genome_path)
                         results["resolved_components"].add(my_count)
-                        results["resolved_cyclic"].add(my_count)
+                        results["resolved_linear"].add(my_count)
                         results["case2_resolved"].add(my_count)
 
         # Case 3 components
