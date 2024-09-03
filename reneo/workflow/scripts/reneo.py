@@ -262,8 +262,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                     if (
                         unitig1_len > unitig2_len
-                        and unitig1_len > minlength
-                        and unitig2_name in self_looped_nodes
+                        and unitig1_len > kwargs["minlength"]
+                        and unitig2_name in kwargs["self_looped_nodes"]
                     ):
                         unitig_to_consider = unitig1
                         unitig_name = unitig1_name
@@ -271,8 +271,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         repeat_unitig_name = unitig2_name
                     elif (
                         unitig2_len > unitig1_len
-                        and unitig2_len > minlength
-                        and unitig1_name in self_looped_nodes
+                        and unitig2_len > kwargs["minlength"]
+                        and unitig1_name in kwargs["self_looped_nodes"]
                     ):
                         unitig_to_consider = unitig2
                         unitig_name = unitig2_name
