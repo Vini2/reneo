@@ -284,8 +284,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                             f"Case 2 component: {unitig1_name} is {unitig1_len} bp long and {unitig2_name} is {unitig2_len} bp long."
                         )
                         cycle_number = 1
-                        kwargs["resolved_edges"].add(unitig_to_consider)
-                        kwargs["resolved_edges"].add(repeat_unitig)
+                        results["resolved_edges"].add(unitig_to_consider)
+                        results["resolved_edges"].add(repeat_unitig)
 
                         # Get repeat count
                         repeat_count = max(
