@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Source: https://github.com/algbio/MFD-ILP
 
 import logging
@@ -5,8 +7,17 @@ import logging
 import more_itertools
 import networkx as nx
 
-# create logger
-logger = logging.getLogger("reneo 0.5.0")
+__author__ = "Vijini Mallawaarachchi"
+__copyright__ = "Copyright 2023, Reneo Project"
+__license__ = "MIT"
+__version__ = "0.5.0"
+__maintainer__ = "Vijini Mallawaarachchi"
+__email__ = "viji.mallawaarachchi@gmail.com"
+__status__ = "Development"
+
+
+# Create logger
+logger = logging.getLogger(f"reneo {__version__}")
 
 
 def read_input(graphfile, number_subpath):

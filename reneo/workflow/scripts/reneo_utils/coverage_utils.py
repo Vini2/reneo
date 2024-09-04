@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import glob
 import os
 import pickle
@@ -6,6 +8,14 @@ import threading
 from collections import defaultdict
 
 import pysam
+
+__author__ = "Vijini Mallawaarachchi"
+__copyright__ = "Copyright 2023, Reneo Project"
+__license__ = "MIT"
+__version__ = "0.5.0"
+__maintainer__ = "Vijini Mallawaarachchi"
+__email__ = "viji.mallawaarachchi@gmail.com"
+__status__ = "Development"
 
 
 def get_unitig_coverage(coverage):

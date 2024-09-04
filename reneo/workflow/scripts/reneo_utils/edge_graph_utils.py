@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import copy
 import logging
 from collections import defaultdict
@@ -6,8 +8,17 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from igraph import *
 
+__author__ = "Vijini Mallawaarachchi"
+__copyright__ = "Copyright 2023, Reneo Project"
+__license__ = "MIT"
+__version__ = "0.5.0"
+__maintainer__ = "Vijini Mallawaarachchi"
+__email__ = "viji.mallawaarachchi@gmail.com"
+__status__ = "Development"
+
+
 # Create logger
-logger = logging.getLogger("reneo 0.5.0")
+logger = logging.getLogger(f"reneo {__version__}")
 
 
 class BidirectionalError(Exception):

@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+
+__author__ = "Vijini Mallawaarachchi"
+__copyright__ = "Copyright 2023, Reneo Project"
+__license__ = "MIT"
+__version__ = "0.5.0"
+__maintainer__ = "Vijini Mallawaarachchi"
+__email__ = "viji.mallawaarachchi@gmail.com"
+__status__ = "Development"
+
+
 # Class for genome path
 class GenomePath:
     def __init__(

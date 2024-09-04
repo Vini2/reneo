@@ -7,7 +7,7 @@ import pysam
 from reneo_utils.coverage_utils import read_pair_generator
 
 __author__ = "Michael Roach"
-__copyright__ = "Copyright 2022, Reneo Project"
+__copyright__ = "Copyright 2023, Reneo Project"
 __license__ = "MIT"
 __version__ = "0.5.0"
 __maintainer__ = "Vijini Mallawaarachchi"

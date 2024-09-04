@@ -1,8 +1,17 @@
-import tempfile
+#!/usr/bin/env python3
 
+import tempfile
 import networkx as nx
 
 from .FD_Inexact import SolveInstances
+
+__author__ = "Vijini Mallawaarachchi"
+__copyright__ = "Copyright 2023, Reneo Project"
+__license__ = "MIT"
+__version__ = "0.5.0"
+__maintainer__ = "Vijini Mallawaarachchi"
+__email__ = "viji.mallawaarachchi@gmail.com"
+__status__ = "Development"
 
 
 def get_source_sink_circular(G_edge, graph_unitigs, minlength, self_looped_nodes):
