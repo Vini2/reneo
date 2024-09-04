@@ -32,14 +32,22 @@ __status__ = "Development"
 
 
 def setup_logging(**kwargs):
+
     logging.basicConfig(
         filename=kwargs["log"],
         level=logging.DEBUG,
-        format="%(asctime)s %(message)s",
+        format="%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     logging.captureWarnings(True)
-    logger = logging.getLogger(__version__)
+    logger = logging.getLogger(f"reneo {__version__}")
+
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    consoleHeader = logging.StreamHandler()
+    consoleHeader.setFormatter(formatter)
+    consoleHeader.setLevel(logging.INFO)
+    logger.addHandler(consoleHeader)
+
     return logger
 
 
