@@ -1606,7 +1606,7 @@ def main(**kwargs):
     )
     kwargs["logger"].info(f"Minimum coverage of paths to output: {kwargs['mincov']}")
     kwargs["logger"].info(
-        f"Minimum unitig count to consider a component: {kwargs['compcount']}"
+        f"Maximum unitig count to consider a component: {kwargs['compcount']}"
     )
     kwargs["logger"].info(
         f"Maximum number of paths to resolve for a component: {kwargs['maxpaths']}"
