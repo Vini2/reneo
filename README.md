@@ -11,6 +11,7 @@ Reneo: Unraveling Viral Genomes from Metagenomes
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/reneo/README.html)
 [![Conda](https://img.shields.io/conda/v/bioconda/reneo)](https://anaconda.org/bioconda/reneo)
 [![Conda](https://img.shields.io/conda/dn/bioconda/reneo)](https://anaconda.org/bioconda/reneo)
+[![PyPI version](https://badge.fury.io/py/reneo.svg)](https://badge.fury.io/py/reneo)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/Vini2/reneo?color=8a35da)
 [![CI](https://github.com/Vini2/reneo/actions/workflows/test_reneo.yml/badge.svg)](https://github.com/Vini2/reneo/actions/workflows/test_reneo.yml)
@@ -19,11 +20,11 @@ Reneo: Unraveling Viral Genomes from Metagenomes
 
 [Reneo](https://en.wiktionary.org/wiki/reneo) means to *unravel* or *untangle* in Latin. Reneo is a software developed to unravel or untangle high-quality genomes from viral communities (including both prokaryotic and eukaryotic viruses) found within metagenomes using assembly graphs. Reneo identifies viral components in the metagenomic assembly using virus orthologous groups from [VOGDB](https://vogdb.org/), models as flow networks and solves a minimum flow decomposition (MFD) problem to resolve genomic paths. Reneo was motivated based on a bacteriophage recovery tool named [Phables](https://github.com/Vini2/phables), specifically to extend the capabilities of Phables to all viruses.
 
-**NEW:** Reneo is available on bioconda at [https://anaconda.org/bioconda/reneo](https://anaconda.org/bioconda/reneo)
+**NEW:** Reneo is available on Bioconda at [https://anaconda.org/bioconda/reneo](https://anaconda.org/bioconda/reneo) and on PyPI at [https://pypi.org/project/reneo](https://pypi.org/project/reneo).
 
 ## Setting up Reneo
 
-### Installing Reneo using conda (recommended)
+### Option 1: Installing Reneo using conda (recommended)
 
 You can install Reneo from bioconda at [https://anaconda.org/bioconda/reneo](https://anaconda.org/bioconda/reneo). Make sure you have [`conda`](https://docs.conda.io/en/latest/) installed.
 
@@ -33,6 +34,16 @@ conda create -n reneo -c conda-forge -c anaconda -c bioconda reneo
 
 # activate environment
 conda activate reneo
+```
+
+Now you can go to [Setting up Gurobi](#setting-up-gurobi) to configure Gurobi.
+
+### Option 2: Installing Reneo using pip
+
+You can install Reneo from PyPI at [https://pypi.org/project/phables/](https://pypi.org/project/reneo/). Make sure you have [`pip`](https://pip.pypa.io/en/stable/) and [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) installed.
+
+```bash
+pip install reneo
 ```
 
 Now you can go to [Setting up Gurobi](#setting-up-gurobi) to configure Gurobi.
