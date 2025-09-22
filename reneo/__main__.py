@@ -250,7 +250,7 @@ For information on Snakemake profiles see:
 https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles
 \b
 RUN EXAMPLES:
-Required:           reneo run --input [assembly_graph.gfa] --reads [reads.dir/tsv]
+Required:           reneo run --input [assembly_graph.gfa] --reads [reads.dir/tsv] --bins [bins.dir]
 Specify threads:    reneo run ... --threads [threads]
 Disable conda:      reneo run ... --no-use-conda 
 Change defaults:    reneo run ... --snake-default="-k --nolock"
@@ -275,12 +275,18 @@ Available targets:
 @click.option(
     "--input",
     help="Path to assembly graph file in .GFA format",
-    type=click.Path(),
+    type=click.Path(exists=True),
     required=True,
 )
 @click.option(
     "--reads",
     help="Path to directory or TSV containing paired-end reads",
+    type=click.Path(exists=True),
+    required=True,
+)
+@click.option(
+    "--bins",
+    help="Path to the bins folder",
     type=click.Path(exists=True),
     required=True,
 )

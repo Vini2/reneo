@@ -158,6 +158,19 @@ def write_component_vog_info(resolved_components, comp_vogs, output):
     return "component_vogs.txt"
 
 
+def write_resolved_bins(resolved_bins, output):
+    """
+    Write resolved bins to file
+    """
+
+    with open(f"{output}/resolved_bins.txt", "w") as myfile:
+        myfile.write(f"Bin_ID\tComponent_ID\n")
+        for bin_id in resolved_bins:
+            myfile.write(f"{bin_id}\t{resolved_bins[bin_id]}\n")
+
+    return "resolved_bins.txt"
+
+
 def init_files(output):
     """
     Initialise files and folders
@@ -168,6 +181,7 @@ def init_files(output):
     open(f"{output}/resolved_genome_info.txt", "a").close()
     open(f"{output}/resolved_component_info.txt", "a").close()
     open(f"{output}/component_vogs.txt", "a").close()
+    open(f"{output}/resolved_bins.txt", "a").close()
 
     # if not os.path.isdir(f"{output}/resolved_paths"):
     #     subprocess.run(f"mkdir -p {output}/resolved_paths", shell=True)

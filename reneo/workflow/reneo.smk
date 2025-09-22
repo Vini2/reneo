@@ -79,10 +79,12 @@ include: os.path.join("rules", "coverage.smk")
 # Step 4: Scan unitig sequences for single-copy marker genes and PHROGs
 include: os.path.join("rules", "genes.smk")
 
+# Step 4: Get binning results
+include: os.path.join("rules", "prepresults.smk")
 
-# Step 5: Run Reneo
+# Step 6: Run Reneo
 include: os.path.join("rules", "reneo.smk")
 
 
-# Step 6: Postprocess genomes
+# Step 7: Postprocess genomes
 include: os.path.join("rules", "postprocess.smk")

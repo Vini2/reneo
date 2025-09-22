@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import csv
+from collections import defaultdict
 import logging
 import pickle
 import queue
@@ -20,6 +22,7 @@ from reneo_utils.output_utils import (
     write_path_fasta,
     write_res_genome_info,
     write_unitigs,
+    write_resolved_bins,
 )
 
 __author__ = "Vijini Mallawaarachchi"
@@ -59,6 +62,7 @@ def results_dict():
         "cycle_components": set(),
         "linear_components": set(),
         "resolved_components": set(),
+        "resolved_bins": dict(),
         "resolved_linear": set(),
         "single_unitigs": set(),
         "resolved_cyclic": set(),
@@ -79,9 +83,71 @@ def merge_results(orig_res, new_res):
     for key in orig_res.keys():
         if isinstance(orig_res[key], list):
             orig_res[key] += new_res[key]
+        elif isinstance(orig_res[key], dict):
+            # merge dicts, union sets when values are sets
+            for k, v in new_res[key].items():
+                if isinstance(v, set):
+                    orig_res[key].setdefault(k, set()).update(v)
+                else:
+                    # simple overwrite for scalar-like values
+                    orig_res[key][k] = v
         else:
             orig_res[key] = orig_res[key].union(new_res[key])
     return orig_res
+
+
+def load_unitig_bins(csv_file, unitig_names_rev):
+    """
+    Parse a CSV with columns: unitig_name, bin_name
+    and return {unitig_id: bin_name}.
+    """
+    unitig_bins = {}
+    with open(csv_file, newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            unitig_name = row["unitig_name"]
+            bin_name = row["bin_name"]
+            if unitig_name in unitig_names_rev:
+                unitig_id = unitig_names_rev[unitig_name]
+                unitig_bins[unitig_id] = bin_name
+    return unitig_bins
+
+
+def majority_bin(unitig_ids, unitig_bins, threshold=0.5):
+    """
+    Returns (ok, top_bin, frac) where:
+      ok      -> True if all unitigs share one bin OR a single bin has >= threshold fraction
+      top_bin -> the bin_id that dominates (or the single bin)
+      frac    -> fraction of unitigs in top_bin (0..1)
+    unitig_ids are integer ids (same ids used in pruned_vs/assembly_graph)
+    unitig_bins is a dict {unitig_id: bin_id}
+    """
+
+    counts = defaultdict()
+    total = 0
+    for uid in unitig_ids:
+        if uid in unitig_bins:
+            b = unitig_bins[uid]
+            if b in counts:
+                counts[b] += 1
+            else:
+                counts[b] = 1
+            total += 1
+
+    if total == 0:
+        return False, None, 0.0  # nothing mapped to bins
+
+    # find top bin
+    top_bin, top_count = max(counts.items(), key=lambda kv: kv[1])
+
+    # case A: single bin contains every mapped unitig (and all unitigs were mapped)
+    all_single_bin = (top_count == total) and (total == len(unitig_ids))
+
+    # case B: majority bin over threshold among *considered* (mapped) unitigs
+    frac = top_count / total
+
+    ok = all_single_bin or (frac >= threshold)
+    return ok, top_bin, frac
 
 
 def worker_resolve_components(component_queue, results_queue, **kwargs):
@@ -113,8 +179,25 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
         case_name = ""
 
+        # kwargs["logger"].info(f"unitig_ids: {original_candidate_nodes}")
+        # kwargs["logger"].info(f"unitig_bins: {kwargs['unitig_bins']}")
+
+        # Decide "bin-based resolve" for this component
+        bin_ok, bin_id, bin_frac = majority_bin(
+            original_candidate_nodes,
+            kwargs["unitig_bins"],
+        )
+        if bin_ok:
+            kwargs["logger"].debug(
+                f"[bin-check] Component {my_count}: bin={bin_id}, frac={bin_frac:.2%} -> resolve by bin membership if case 3"
+            )
+        else:
+            kwargs["logger"].debug(
+                f"[bin-check] Component {my_count}: no single/majority bin (top frac={bin_frac:.2%})"
+            )
+
         # Case 2 components
-        if len(candidate_nodes) == 2:
+        if len(candidate_nodes) == 2 and bin_ok:
             all_self_looped = True
             one_circular = False
 
@@ -243,6 +326,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         )
                         my_genomic_paths.append(genome_path)
                         results["resolved_components"].add(my_count)
+                        results["resolved_bins"][bin_id] = my_count
                         results["resolved_cyclic"].add(my_count)
                         results["case2_resolved"].add(my_count)
 
@@ -353,11 +437,12 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         )
                         my_genomic_paths.append(genome_path)
                         results["resolved_components"].add(my_count)
+                        results["resolved_bins"][bin_id] = my_count
                         results["resolved_linear"].add(my_count)
                         results["case2_resolved"].add(my_count)
 
         # Case 3 components
-        elif len(candidate_nodes) > 2 and len(candidate_nodes) <= kwargs["compcount"]:
+        elif len(candidate_nodes) > 2 and len(candidate_nodes) <= kwargs["compcount"] and bin_ok:
 
             case_name = "case3_circular"
 
@@ -1430,44 +1515,43 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         continue
 
         # Case 1 components - single unitigs
-        elif len(candidate_nodes) == 1:
+        elif len(candidate_nodes) == 1 and bin_ok:
             unitig_name = kwargs["unitig_names"][candidate_nodes[0]]
 
             results["case1_found"].add(my_count)
 
             if unitig_name in kwargs["self_looped_nodes"]:
                 case_name = "case1_circular"
-            else:
-                case_name = "case1_linear"
 
-            results["resolved_edges"].add(candidate_nodes[0])
-            comp_resolved_edges.add(candidate_nodes[0])
+                results["resolved_edges"].add(candidate_nodes[0])
+                comp_resolved_edges.add(candidate_nodes[0])
 
-            path_string = str(kwargs["graph_unitigs"][unitig_name])
+                path_string = str(kwargs["graph_unitigs"][unitig_name])
 
-            cycle_number = 1
+                cycle_number = 1
 
-            # Create GenomePath object with path details
-            genome_path = GenomePath(
-                id=f"virus_comp_{my_count}_cycle_{cycle_number}",
-                bubble_case=case_name,
-                node_order=[kwargs["unitig_names"][candidate_nodes[0]]],
-                node_id_order=[candidate_nodes[0]],
-                path=path_string,
-                coverage=int(kwargs["unitig_coverages"][unitig_name]),
-                length=len(kwargs["graph_unitigs"][unitig_name]),
-                gc=(path_string.count("G") + path_string.count("C"))
-                / len(path_string)
-                * 100,
-            )
-            my_genomic_paths.append(genome_path)
-            results["resolved_components"].add(my_count)
-            results["single_unitigs"].add(my_count)
-            results["case1_resolved"].add(my_count)
+                # Create GenomePath object with path details
+                genome_path = GenomePath(
+                    id=f"virus_comp_{my_count}_cycle_{cycle_number}",
+                    bubble_case=case_name,
+                    node_order=[kwargs["unitig_names"][candidate_nodes[0]]],
+                    node_id_order=[candidate_nodes[0]],
+                    path=path_string,
+                    coverage=int(kwargs["unitig_coverages"][unitig_name]),
+                    length=len(kwargs["graph_unitigs"][unitig_name]),
+                    gc=(path_string.count("G") + path_string.count("C"))
+                    / len(path_string)
+                    * 100,
+                )
+                my_genomic_paths.append(genome_path)
+                results["resolved_components"].add(my_count)
+                results["resolved_bins"][bin_id] = my_count
+                results["single_unitigs"].add(my_count)
+                results["case1_resolved"].add(my_count)
 
-            results["virus_like_edges"] = results["virus_like_edges"].union(
-                set(candidate_nodes)
-            )
+                results["virus_like_edges"] = results["virus_like_edges"].union(
+                    set(candidate_nodes)
+                )
 
         # Record final paths for the component
         # ----------------------------------------------------------------------
@@ -1566,6 +1650,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
             if len(final_genomic_paths) > 0:
                 results["resolved_components"].add(my_count)
+                results["resolved_bins"][bin_id] = my_count
                 results["all_resolved_paths"] += final_genomic_paths
                 component_elapsed_time = time.time() - component_time_start
                 kwargs["logger"].debug(
@@ -1579,6 +1664,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 results["all_resolved_paths"].append(genomic_path)
                 kwargs["logger"].debug(f"{genomic_path.id}\t{genomic_path.length}")
                 results["resolved_components"].add(my_count)
+                results["resolved_bins"][bin_id] = my_count
 
         # Add the paths for writing
         results["genome_path_sets"].add(tuple(final_genomic_paths))
@@ -1597,6 +1683,7 @@ def main(**kwargs):
     )
     kwargs["logger"].info(f"Input arguments: ")
     kwargs["logger"].info(f"Assembly graph file: {kwargs['graph']}")
+    kwargs["logger"].info(f"Bins file: {kwargs['bins_file']}")
     kwargs["logger"].info(f"Unitig coverage file: {kwargs['coverage']}")
     kwargs["logger"].info(f"BAM files path: {kwargs['bampath']}")
     kwargs["logger"].info(f"Unitig .hmmout file: {kwargs['hmmout']}")
@@ -1655,6 +1742,10 @@ def main(**kwargs):
     kwargs["logger"].info(
         f"Total number of links in the assembly graph: {len(kwargs['assembly_graph'].es)}"
     )
+
+    # Get binning information
+    # ----------------------------------------------------------------------
+    kwargs["unitig_bins"] = load_unitig_bins(kwargs["bins_file"], kwargs["unitig_names_rev"])
 
     # Get single unitigs
     # ----------------------------------------------------------------------
@@ -1772,6 +1863,9 @@ def main(**kwargs):
         f"Total number of components resolved: {len(results['single_unitigs'])+len(results['resolved_cyclic'])+len(results['resolved_linear'])}"
     )
     kwargs["logger"].info(
+        f"Total number of bins resolved: {len(results['resolved_bins'])}"
+    )
+    kwargs["logger"].info(
         f"Case 1 (resolved/found): {len(results['case1_resolved'])}/{len(results['case1_found'])}"
     )
     kwargs["logger"].info(
@@ -1834,7 +1928,7 @@ def main(**kwargs):
             f"Resolved genome information can be found in {kwargs['output']}/{filename}"
         )
 
-    # Record component information
+    # Record component and bin information
     # ----------------------------------------------------------------------
 
     filename = write_component_info(results["all_components"], kwargs["output"])
@@ -1849,6 +1943,14 @@ def main(**kwargs):
     if len(results["resolved_components"]) > 0:
         kwargs["logger"].info(
             f"PHROGs found in resolved components can be found in {kwargs['output']}/{filename}"
+        )
+
+    filename = write_resolved_bins(
+        results["resolved_bins"], kwargs["output"]
+    )
+    if len(results["resolved_bins"]) > 0:
+        kwargs["logger"].info(
+            f"The resolved bins and corresponding component numbers can be found in {kwargs['output']}/{filename}"
         )
 
     # Get elapsed time
@@ -1869,6 +1971,7 @@ def main(**kwargs):
 if __name__ == "__main__":
     main(
         graph=snakemake.input.graph,
+        bins_file=snakemake.input.bins,
         coverage=snakemake.input.coverage,
         pickle_file=snakemake.input.pickle,
         bampath=snakemake.params.bampath,

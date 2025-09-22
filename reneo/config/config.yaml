@@ -15,6 +15,7 @@ resources:
 reneo:
     input:
     output: 'reneo.out/'
+    bins:
     log: 'reneo/reneo.log'
     databases:
     profile:

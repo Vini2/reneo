@@ -7,6 +7,8 @@ postprocessTargets = []
 """MISC"""
 GRAPH_FILE = config['input']
 PICKLE_FILE = os.path.join(TMPDIR, "PE_junctions.pkl")
+BINS = config['bins']
+BINS_FILE = os.path.join(RESDIR,"seq_bins.csv")
 
 
 """PREPROCESSING TARGETS"""
