@@ -286,7 +286,7 @@ Available targets:
 )
 @click.option(
     "--bins",
-    help="Path to the bins folder",
+    help="Path to the binning results folder with FASTA files for each bin",
     type=click.Path(exists=True),
     required=True,
 )
