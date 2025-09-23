@@ -49,61 +49,73 @@ def main():
     files = os.listdir(bins_folder)
 
 
-    # Check if folder path of binning result is empty.
-    # ---------------------------------------------------
-    if len(files) == 0:
-        logger.error(
-            "Folder containing the initial binning result is empty. Please enter a valid path to the folder containing the initial binning result."
-        )
-        logger.info("Exiting prep_results.py... Bye...!")
-        sys.exit(1)
+    if bins_folder == "./":
+        logger.info("No binning folder provided. Defaulting to Reneo core!")
+
+        with open(output_path, mode="w") as bins_file:
+            seq_writer = csv.writer(
+                bins_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
+            )
+
+            seq_writer.writerow(["unitig_name", "bin_name"])
+
+    else:
+
+        # Check if folder path of binning result is empty.
+        # ---------------------------------------------------
+        if len(files) == 0:
+            logger.error(
+                "Folder containing the initial binning result is empty. Please enter a valid path to the folder containing the initial binning result."
+            )
+            logger.info("Exiting prep_results.py... Bye...!")
+            sys.exit(1)
 
 
-    # Check if binning result folder contains fasta files.
-    # ---------------------------------------------------
-    isFasta = False
-    for myfile in files:
-        if myfile.lower().endswith((".fasta", ".fa", ".fna")):
-            isFasta = True
+        # Check if binning result folder contains fasta files.
+        # ---------------------------------------------------
+        isFasta = False
+        for myfile in files:
+            if myfile.lower().endswith((".fasta", ".fa", ".fna")):
+                isFasta = True
 
-    if not isFasta:
-        logger.error(
-            "Make sure the folder containing the initial binning result contains fasta files (.fasta, .fa or .fna)."
-        )
-        logger.info("Exiting prep_results.py... Bye...!")
-        sys.exit(1)
+        if not isFasta:
+            logger.error(
+                "Make sure the folder containing the initial binning result contains fasta files (.fasta, .fa or .fna)."
+            )
+            logger.info("Exiting prep_results.py... Bye...!")
+            sys.exit(1)
 
-    # Format binning results.
-    # ---------------------------------------------------
+        # Format binning results.
+        # ---------------------------------------------------
 
-    logger.info("Formatting initial binning results")
+        logger.info("Formatting initial binning results")
 
-    seq_bins = []
+        seq_bins = []
 
-    for bin_file in files:
-        if bin_file.lower().endswith((".fasta", ".fa", ".fna")):
-            fasta_file = bins_folder + bin_file
-            for record in SeqIO.parse(fasta_file, "fasta"):
-                line = [record.id, str(bin_file)]
-                seq_bins.append(line)
+        for bin_file in files:
+            if bin_file.lower().endswith((".fasta", ".fa", ".fna")):
+                fasta_file = bins_folder + bin_file
+                for record in SeqIO.parse(fasta_file, "fasta"):
+                    line = [record.id, str(bin_file)]
+                    seq_bins.append(line)
 
 
-    # Write binning results to output file.
-    # ---------------------------------------------------
+        # Write binning results to output file.
+        # ---------------------------------------------------
 
-    logger.info("Writing initial binning results to output file")
+        logger.info("Writing initial binning results to output file")
 
-    with open(output_path, mode="w") as bins_file:
-        seq_writer = csv.writer(
-            bins_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
-        )
+        with open(output_path, mode="w") as bins_file:
+            seq_writer = csv.writer(
+                bins_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
+            )
 
-        seq_writer.writerow(["unitig_name", "bin_name"])
+            seq_writer.writerow(["unitig_name", "bin_name"])
 
-        for row in seq_bins:
-            seq_writer.writerow(row)
+            for row in seq_bins:
+                seq_writer.writerow(row)
 
-    logger.info(f"Formatted initial binning results can be found at {bins_file.name}")
+        logger.info(f"Formatted initial binning results can be found at {bins_file.name}")
 
 
     # Exit program

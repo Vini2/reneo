@@ -101,6 +101,7 @@ def load_unitig_bins(csv_file, unitig_names_rev):
     Parse a CSV with columns: unitig_name, bin_name
     and return {unitig_id: bin_name}.
     """
+
     unitig_bins = {}
     with open(csv_file, newline="") as f:
         reader = csv.DictReader(f)
@@ -179,22 +180,23 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
         case_name = ""
 
-        # kwargs["logger"].info(f"unitig_ids: {original_candidate_nodes}")
-        # kwargs["logger"].info(f"unitig_bins: {kwargs['unitig_bins']}")
+        bin_ok = True
 
-        # Decide "bin-based resolve" for this component
-        bin_ok, bin_id, bin_frac = majority_bin(
-            original_candidate_nodes,
-            kwargs["unitig_bins"],
-        )
-        if bin_ok:
-            kwargs["logger"].debug(
-                f"[bin-check] Component {my_count}: bin={bin_id}, frac={bin_frac:.2%} -> resolve by bin membership if case 3"
+        if len(kwargs["unitig_bins"]) > 0:
+
+            # Decide "bin-based resolve" for this component
+            bin_ok, bin_id, bin_frac = majority_bin(
+                original_candidate_nodes,
+                kwargs["unitig_bins"],
             )
-        else:
-            kwargs["logger"].debug(
-                f"[bin-check] Component {my_count}: no single/majority bin (top frac={bin_frac:.2%})"
-            )
+            if bin_ok:
+                kwargs["logger"].debug(
+                    f"[bin-check] Component {my_count}: bin={bin_id}, frac={bin_frac:.2%} -> resolve by bin membership if case 3"
+                )
+            else:
+                kwargs["logger"].debug(
+                    f"[bin-check] Component {my_count}: no single/majority bin (top frac={bin_frac:.2%})"
+                )
 
         # Case 2 components
         if len(candidate_nodes) == 2 and bin_ok:
@@ -326,7 +328,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         )
                         my_genomic_paths.append(genome_path)
                         results["resolved_components"].add(my_count)
-                        results["resolved_bins"][bin_id] = my_count
+                        if len(kwargs["unitig_bins"]) > 0:
+                            results["resolved_bins"][bin_id] = my_count
                         results["resolved_cyclic"].add(my_count)
                         results["case2_resolved"].add(my_count)
 
@@ -437,7 +440,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         )
                         my_genomic_paths.append(genome_path)
                         results["resolved_components"].add(my_count)
-                        results["resolved_bins"][bin_id] = my_count
+                        if len(kwargs["unitig_bins"]) > 0:
+                            results["resolved_bins"][bin_id] = my_count
                         results["resolved_linear"].add(my_count)
                         results["case2_resolved"].add(my_count)
 
@@ -1522,36 +1526,39 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
             if unitig_name in kwargs["self_looped_nodes"]:
                 case_name = "case1_circular"
+            else:
+                case_name = "case1_linear"
 
-                results["resolved_edges"].add(candidate_nodes[0])
-                comp_resolved_edges.add(candidate_nodes[0])
+            results["resolved_edges"].add(candidate_nodes[0])
+            comp_resolved_edges.add(candidate_nodes[0])
 
-                path_string = str(kwargs["graph_unitigs"][unitig_name])
+            path_string = str(kwargs["graph_unitigs"][unitig_name])
 
-                cycle_number = 1
+            cycle_number = 1
 
-                # Create GenomePath object with path details
-                genome_path = GenomePath(
-                    id=f"virus_comp_{my_count}_cycle_{cycle_number}",
-                    bubble_case=case_name,
-                    node_order=[kwargs["unitig_names"][candidate_nodes[0]]],
-                    node_id_order=[candidate_nodes[0]],
-                    path=path_string,
-                    coverage=int(kwargs["unitig_coverages"][unitig_name]),
-                    length=len(kwargs["graph_unitigs"][unitig_name]),
-                    gc=(path_string.count("G") + path_string.count("C"))
-                    / len(path_string)
-                    * 100,
-                )
-                my_genomic_paths.append(genome_path)
-                results["resolved_components"].add(my_count)
+            # Create GenomePath object with path details
+            genome_path = GenomePath(
+                id=f"virus_comp_{my_count}_cycle_{cycle_number}",
+                bubble_case=case_name,
+                node_order=[kwargs["unitig_names"][candidate_nodes[0]]],
+                node_id_order=[candidate_nodes[0]],
+                path=path_string,
+                coverage=int(kwargs["unitig_coverages"][unitig_name]),
+                length=len(kwargs["graph_unitigs"][unitig_name]),
+                gc=(path_string.count("G") + path_string.count("C"))
+                / len(path_string)
+                * 100,
+            )
+            my_genomic_paths.append(genome_path)
+            results["resolved_components"].add(my_count)
+            if len(kwargs["unitig_bins"]) > 0:
                 results["resolved_bins"][bin_id] = my_count
-                results["single_unitigs"].add(my_count)
-                results["case1_resolved"].add(my_count)
+            results["single_unitigs"].add(my_count)
+            results["case1_resolved"].add(my_count)
 
-                results["virus_like_edges"] = results["virus_like_edges"].union(
-                    set(candidate_nodes)
-                )
+            results["virus_like_edges"] = results["virus_like_edges"].union(
+                set(candidate_nodes)
+            )
 
         # Record final paths for the component
         # ----------------------------------------------------------------------
@@ -1650,7 +1657,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
             if len(final_genomic_paths) > 0:
                 results["resolved_components"].add(my_count)
-                results["resolved_bins"][bin_id] = my_count
+                if len(kwargs["unitig_bins"]) > 0:
+                    results["resolved_bins"][bin_id] = my_count
                 results["all_resolved_paths"] += final_genomic_paths
                 component_elapsed_time = time.time() - component_time_start
                 kwargs["logger"].debug(
@@ -1664,7 +1672,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 results["all_resolved_paths"].append(genomic_path)
                 kwargs["logger"].debug(f"{genomic_path.id}\t{genomic_path.length}")
                 results["resolved_components"].add(my_count)
-                results["resolved_bins"][bin_id] = my_count
+                if len(kwargs["unitig_bins"]) > 0:
+                    results["resolved_bins"][bin_id] = my_count
 
         # Add the paths for writing
         results["genome_path_sets"].add(tuple(final_genomic_paths))

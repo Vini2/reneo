@@ -118,6 +118,13 @@ def run_options(func):
 
     options = [
         click.option(
+            "--bins",
+            help="Path to the binning results folder with FASTA files for each bin",
+            type=str,
+            required=False,
+            default="./",
+        ),
+        click.option(
             "--minlength",
             default=1000,
             required=False,
@@ -281,12 +288,6 @@ Available targets:
 @click.option(
     "--reads",
     help="Path to directory or TSV containing paired-end reads",
-    type=click.Path(exists=True),
-    required=True,
-)
-@click.option(
-    "--bins",
-    help="Path to the binning results folder with FASTA files for each bin",
     type=click.Path(exists=True),
     required=True,
 )
