@@ -120,7 +120,7 @@ def run_options(func):
         click.option(
             "--bins",
             help="Path to the binning results folder with FASTA files for each bin",
-            type=str,
+            type=click.Path(),
             required=False,
             default="./",
         ),
@@ -257,7 +257,7 @@ For information on Snakemake profiles see:
 https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles
 \b
 RUN EXAMPLES:
-Required:           reneo run --input [assembly_graph.gfa] --reads [reads.dir/tsv] --bins [bins.dir]
+Required:           reneo run --input [assembly_graph.gfa] --reads [reads.dir/tsv]
 Specify threads:    reneo run ... --threads [threads]
 Disable conda:      reneo run ... --no-use-conda 
 Change defaults:    reneo run ... --snake-default="-k --nolock"
