@@ -166,7 +166,8 @@ def write_resolved_bins(resolved_bins, output):
     with open(f"{output}/resolved_bins.txt", "w") as myfile:
         myfile.write(f"Bin_ID\tComponent_ID\n")
         for bin_id in resolved_bins:
-            myfile.write(f"{bin_id}\t{resolved_bins[bin_id]}\n")
+            for ubin in resolved_bins[bin_id]:
+                myfile.write(f"{bin_id}\t{ubin}\n")
 
     return "resolved_bins.txt"
 

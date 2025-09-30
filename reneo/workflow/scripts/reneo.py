@@ -28,7 +28,7 @@ from reneo_utils.output_utils import (
 __author__ = "Vijini Mallawaarachchi"
 __copyright__ = "Copyright 2023, Reneo Project"
 __license__ = "MIT"
-__version__ = "0.5.0"
+__version__ = "0.8.0"
 __maintainer__ = "Vijini Mallawaarachchi"
 __email__ = "viji.mallawaarachchi@gmail.com"
 __status__ = "Development"
@@ -62,7 +62,7 @@ def results_dict():
         "cycle_components": set(),
         "linear_components": set(),
         "resolved_components": set(),
-        "resolved_bins": dict(),
+        "resolved_bins": defaultdict(set),
         "resolved_linear": set(),
         "single_unitigs": set(),
         "resolved_cyclic": set(),
@@ -83,7 +83,7 @@ def merge_results(orig_res, new_res):
     for key in orig_res.keys():
         if isinstance(orig_res[key], list):
             orig_res[key] += new_res[key]
-        elif isinstance(orig_res[key], dict):
+        elif isinstance(orig_res[key], defaultdict):
             # merge dicts, union sets when values are sets
             for k, v in new_res[key].items():
                 if isinstance(v, set):
@@ -180,7 +180,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
         case_name = ""
 
-        bin_ok = True
+        to_resolve = False
+
+        bin_ok = False
 
         if len(kwargs["unitig_bins"]) > 0:
 
@@ -190,16 +192,28 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 kwargs["unitig_bins"],
             )
             if bin_ok:
-                kwargs["logger"].debug(
+                kwargs["logger"].info(
                     f"[bin-check] Component {my_count}: bin={bin_id}, frac={bin_frac:.2%} -> resolve by bin membership if case 3"
                 )
+                bin_members = [b for b in kwargs["unitig_bins"].values() if b == bin_id]
             else:
-                kwargs["logger"].debug(
+                kwargs["logger"].info(
                     f"[bin-check] Component {my_count}: no single/majority bin (top frac={bin_frac:.2%})"
                 )
 
+        if len(kwargs["unitig_bins"]) > 0 and bin_ok == True:
+            to_resolve = True
+        elif len(kwargs["unitig_bins"]) > 0 and bin_ok == False:
+            to_resolve = False
+        elif len(kwargs["unitig_bins"]) == 0:
+            to_resolve = True
+
+        len_unitig_bins = len(kwargs["unitig_bins"])
+
+        kwargs["logger"].info(f"my_count: {my_count}, bin_ok: {bin_ok}, to_resolve: {to_resolve}, len: {len_unitig_bins}")
+
         # Case 2 components
-        if len(candidate_nodes) == 2 and bin_ok:
+        if len(candidate_nodes) == 2 and to_resolve:
             all_self_looped = True
             one_circular = False
 
@@ -329,7 +343,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         my_genomic_paths.append(genome_path)
                         results["resolved_components"].add(my_count)
                         if len(kwargs["unitig_bins"]) > 0:
-                            results["resolved_bins"][bin_id] = my_count
+                            results["resolved_bins"][bin_id].add(my_count)
                         results["resolved_cyclic"].add(my_count)
                         results["case2_resolved"].add(my_count)
 
@@ -441,12 +455,12 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         my_genomic_paths.append(genome_path)
                         results["resolved_components"].add(my_count)
                         if len(kwargs["unitig_bins"]) > 0:
-                            results["resolved_bins"][bin_id] = my_count
+                            results["resolved_bins"][bin_id].add(my_count)
                         results["resolved_linear"].add(my_count)
                         results["case2_resolved"].add(my_count)
 
         # Case 3 components
-        elif len(candidate_nodes) > 2 and len(candidate_nodes) <= kwargs["compcount"] and bin_ok:
+        elif len(candidate_nodes) > 2 and len(candidate_nodes) <= kwargs["compcount"] and to_resolve:
 
             case_name = "case3_circular"
 
@@ -993,6 +1007,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                     if cycle_number > 1:
                         results["resolved_components"].add(my_count)
+                        if len(kwargs["unitig_bins"]) > 0:
+                            results["resolved_bins"][bin_id].add(my_count)
                         results["resolved_cyclic"].add(my_count)
                         results["case3_resolved"].add(my_count)
 
@@ -1004,6 +1020,17 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 kwargs["logger"].debug(
                     f"No cycles detected. Found a complex linear component."
                 )
+
+                # if len(kwargs["unitig_bins"]) > 0 and bin_ok:
+                #     bin_ratio = len(set(candidate_nodes).intersection(set(bin_members)))/len(bin_members)
+
+                #     if bin_ratio < 0.8:
+                #         kwargs["logger"].debug(f"Component {my_count} is incomplete. Skipping component.")
+                #         continue
+
+                if len(candidate_nodes) < 5:
+                    kwargs["logger"].debug(f"Component {my_count} is incomplete. Skipping component.")
+                    continue
 
                 case_name = "case3_linear"
 
@@ -1511,6 +1538,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                         if cycle_number > 1:
                             results["resolved_components"].add(my_count)
+                            if len(kwargs["unitig_bins"]) > 0:
+                                results["resolved_bins"][bin_id].add(my_count)
                             results["resolved_linear"].add(my_count)
                             results["case3_resolved"].add(my_count)
 
@@ -1519,7 +1548,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         continue
 
         # Case 1 components - single unitigs
-        elif len(candidate_nodes) == 1 and bin_ok:
+        elif len(candidate_nodes) == 1 and to_resolve:
             unitig_name = kwargs["unitig_names"][candidate_nodes[0]]
 
             results["case1_found"].add(my_count)
@@ -1528,6 +1557,13 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 case_name = "case1_circular"
             else:
                 case_name = "case1_linear"
+
+            if len(kwargs["unitig_bins"]) > 0 and bin_ok and case_name == "case1_linear":
+                    bin_ratio = len(set(candidate_nodes).intersection(set(bin_members)))/len(bin_members)
+
+                    if bin_ratio < 0.8:
+                        kwargs["logger"].debug(f"Component {my_count} is incomplete. Skipping component.")
+                        continue
 
             results["resolved_edges"].add(candidate_nodes[0])
             comp_resolved_edges.add(candidate_nodes[0])
@@ -1552,7 +1588,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
             my_genomic_paths.append(genome_path)
             results["resolved_components"].add(my_count)
             if len(kwargs["unitig_bins"]) > 0:
-                results["resolved_bins"][bin_id] = my_count
+                results["resolved_bins"][bin_id].add(my_count)
             results["single_unitigs"].add(my_count)
             results["case1_resolved"].add(my_count)
 
@@ -1658,7 +1694,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
             if len(final_genomic_paths) > 0:
                 results["resolved_components"].add(my_count)
                 if len(kwargs["unitig_bins"]) > 0:
-                    results["resolved_bins"][bin_id] = my_count
+                    results["resolved_bins"][bin_id].add(my_count)
                 results["all_resolved_paths"] += final_genomic_paths
                 component_elapsed_time = time.time() - component_time_start
                 kwargs["logger"].debug(
@@ -1673,7 +1709,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 kwargs["logger"].debug(f"{genomic_path.id}\t{genomic_path.length}")
                 results["resolved_components"].add(my_count)
                 if len(kwargs["unitig_bins"]) > 0:
-                    results["resolved_bins"][bin_id] = my_count
+                    results["resolved_bins"][bin_id].add(my_count)
 
         # Add the paths for writing
         results["genome_path_sets"].add(tuple(final_genomic_paths))
