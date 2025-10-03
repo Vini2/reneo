@@ -59,10 +59,24 @@ def get_smg_unitigs(hmmout, mg_frac):
     return smg_unitigs
 
 
-def get_vog_unitigs(vogs, e_value, hmm_score):
+def get_vog_unitigs(vogs, e_value, hmm_score, vogfunctions):
     """
     Get unitigs containing VOGs
     """
+
+    # Read vogs table and get annotations and categories
+    vog_table_file = vogfunctions
+
+    vog_dict = defaultdict(str)
+
+    with open(vog_table_file, "r") as myfile:
+        for line in myfile.readlines():
+            if not line.startswith("#"):
+                strings = line.strip().split("\t")
+                vog_dict[f"{strings[0]}"] = f"{strings[4]}"
+
+    # Get unitigs containing vogs
+    unitig_vogs = {}
 
     # Get unitigs containing vogs
     unitig_vogs = {}
@@ -79,10 +93,10 @@ def get_vog_unitigs(vogs, e_value, hmm_score):
                 evalue = float(strings[4])
                 hmmScore = float(strings[5])
 
-                if evalue < e_value and hmmScore > hmm_score:
+                if evalue < e_value and hmmScore > hmm_score and "hypothetical protein" not in vog_dict[vog_id].lower():
                     if name not in unitig_vogs:
                         unitig_vogs[name] = set([vog_id])
                     else:
                         unitig_vogs[name].add(vog_id)
 
-    return unitig_vogs
+    return unitig_vogs, vog_dict

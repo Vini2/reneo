@@ -15,6 +15,7 @@ rule run_reneo:
         genomes_folder = lambda w: directory(os.path.join(RESDIR,"resolved_viruses")) if config["split_paths"] else None,
         unitigs= lambda w: os.path.join(RESDIR,"resolved_edges.fasta") if config["unitigs"] else None,
         vogs=lambda w: VOG_ANNOT if config["hmmsearch"] else None,
+        vogfunctions=lambda w: VOG_FUNC if config["hmmsearch"] else None,
         hmmout=lambda w: SMG_FILE if config["hmmsearch"] else None,
         bampath = BAM_PATH,
         minlength = config['minlength'],

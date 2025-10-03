@@ -866,32 +866,34 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                 total_length += len(trimmed_seq)
 
                                             previous_edge = node
+                                        
+                                        if total_length > kwargs["minlength"]:
 
-                                        # Create GenomePath object with path details
-                                        genome_path = GenomePath(
-                                            id=f"virus_comp_{my_count}_cycle_{cycle_number}",
-                                            bubble_case=case_name,
-                                            node_order=[x for x in path_order],
-                                            node_id_order=[
-                                                kwargs["unitig_names_rev"][x[:-1]]
-                                                for x in path_order
-                                            ],
-                                            path=path_string,
-                                            coverage=int(coverage_val),
-                                            length=total_length,
-                                            gc=(
-                                                path_string.count("G")
-                                                + path_string.count("C")
+                                            # Create GenomePath object with path details
+                                            genome_path = GenomePath(
+                                                id=f"virus_comp_{my_count}_cycle_{cycle_number}",
+                                                bubble_case=case_name,
+                                                node_order=[x for x in path_order],
+                                                node_id_order=[
+                                                    kwargs["unitig_names_rev"][x[:-1]]
+                                                    for x in path_order
+                                                ],
+                                                path=path_string,
+                                                coverage=int(coverage_val),
+                                                length=total_length,
+                                                gc=(
+                                                    path_string.count("G")
+                                                    + path_string.count("C")
+                                                )
+                                                / len(path_string)
+                                                * 100,
                                             )
-                                            / len(path_string)
-                                            * 100,
-                                        )
-                                        my_genomic_paths.append(genome_path)
-                                        kwargs["logger"].debug(
-                                            f"total_length: {total_length}"
-                                        )
+                                            my_genomic_paths.append(genome_path)
+                                            kwargs["logger"].debug(
+                                                f"total_length: {total_length}"
+                                            )
 
-                                        cycle_number += 1
+                                            cycle_number += 1
 
                                 except nx.exception.NodeNotFound:
                                     kwargs["logger"].debug(
@@ -1385,31 +1387,32 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                                                 previous_edge = node
 
-                                            # Create GenomePath object with path details
-                                            genome_path = GenomePath(
-                                                id=f"virus_comp_{my_count}_cycle_{cycle_number}",
-                                                bubble_case=case_name,
-                                                node_order=[x for x in path_order],
-                                                node_id_order=[
-                                                    kwargs["unitig_names_rev"][x[:-1]]
-                                                    for x in path_order
-                                                ],
-                                                path=path_string,
-                                                coverage=int(coverage_val),
-                                                length=total_length,
-                                                gc=(
-                                                    path_string.count("G")
-                                                    + path_string.count("C")
+                                            if total_length > kwargs["minlength"]:
+                                                # Create GenomePath object with path details
+                                                genome_path = GenomePath(
+                                                    id=f"virus_comp_{my_count}_cycle_{cycle_number}",
+                                                    bubble_case=case_name,
+                                                    node_order=[x for x in path_order],
+                                                    node_id_order=[
+                                                        kwargs["unitig_names_rev"][x[:-1]]
+                                                        for x in path_order
+                                                    ],
+                                                    path=path_string,
+                                                    coverage=int(coverage_val),
+                                                    length=total_length,
+                                                    gc=(
+                                                        path_string.count("G")
+                                                        + path_string.count("C")
+                                                    )
+                                                    / len(path_string)
+                                                    * 100,
                                                 )
-                                                / len(path_string)
-                                                * 100,
-                                            )
-                                            my_genomic_paths.append(genome_path)
-                                            kwargs["logger"].debug(
-                                                f"total_length: {total_length}"
-                                            )
+                                                my_genomic_paths.append(genome_path)
+                                                kwargs["logger"].debug(
+                                                    f"total_length: {total_length}"
+                                                )
 
-                                            cycle_number += 1
+                                                cycle_number += 1
 
                                     except nx.exception.NodeNotFound:
                                         kwargs["logger"].debug(
@@ -1674,8 +1677,8 @@ def main(**kwargs):
     # Get unitigs with PHROGs
     # ----------------------------------------------------------------------
     if kwargs["vogs"]:
-        kwargs["unitig_vogs"] = gene_utils.get_vog_unitigs(
-            kwargs["vogs"], kwargs["evalue"], kwargs["hmmscore"]
+        kwargs["unitig_vogs"], kwargs["vog_dict"] = gene_utils.get_vog_unitigs(
+            kwargs["vogs"], kwargs["evalue"], kwargs["hmmscore"], kwargs["vogfunctions"]
         )
     else:
         kwargs["unitig_vogs"] = kwargs["graph_unitigs"]
@@ -1686,6 +1689,8 @@ def main(**kwargs):
     kwargs["logger"].info(
         f"Total number of components found: {len(kwargs['pruned_vs'])}"
     )
+
+    kwargs["logger"].info(kwargs["comp_vogs"])
 
     # Get unitig and junction pe coverages
     # ----------------------------------------------------------------------
@@ -1876,6 +1881,7 @@ if __name__ == "__main__":
         unitigs=snakemake.params.unitigs,
         hmmout=snakemake.params.hmmout,
         vogs=snakemake.params.vogs,
+        vogfunctions=snakemake.params.vogfunctions,
         minlength=int(snakemake.params.minlength),
         mincov=int(snakemake.params.mincov),
         compcount=int(snakemake.params.compcount),

@@ -21,10 +21,12 @@ COVERAGE_FILE = os.path.join(RESDIR, 'reneo.coverage.tsv')
 preprocessTargets.append(COVERAGE_FILE)
 
 VOG_ANNOT = os.path.join(TMPDIR, 'all.hmmVOG.tbl')
+VOG_FUNC = os.path.join(DBPATH, config['vog_annotations_file'])
 SMG_FILE = os.path.join(TMPDIR, 'edges.fasta.hmmout')
 if config["hmmsearch"]:
     preprocessTargets.append(SMG_FILE)
     preprocessTargets.append(VOG_ANNOT)
+    preprocessTargets.append(VOG_FUNC)
 
 
 """PHABLES TARGETS"""

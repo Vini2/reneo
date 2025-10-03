@@ -19,6 +19,7 @@ db_files = []
 
 db_files.append(os.path.join(DBPATH, config['smg_hmm_file']))
 db_files.append(os.path.join(DBPATH, config['vog_db_file']))
+db_files.append(os.path.join(DBPATH, config['vog_annotations_file']))
 
 
 """RUN SNAKEMAKE"""
@@ -53,4 +54,18 @@ rule vog_db_download:
             curl -Lo {params.file} {params.url}
             tar -xOf {params.file} > {output}
             rm -rf {params.file}
+        """
+
+rule vog_annotations_download:
+    params:
+        url=os.path.join(config['vog_annotations']),
+        file=os.path.join(DBPATH, config['vog_annotations_gz']),
+    output:
+        os.path.join(DBPATH, config['vog_annotations_file'])
+    conda:
+        os.path.join("envs", "curl.yaml")
+    shell:
+        """
+            curl -Lo {params.file} {params.url}
+            gzip -d {params.file}
         """

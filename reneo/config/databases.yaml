@@ -6,3 +6,8 @@ smg_hmm_file: "marker.hmm"
 vog_db: "http://fileshare.csb.univie.ac.at/vog/latest/vog.hmm.tar.gz"
 vog_db_tar: "vog.hmm.tar.gz"
 vog_db_file: "AllVOG.hmm"
+
+# VOG annotations
+vog_annotations: "http://fileshare.csb.univie.ac.at/vog/latest/vog.annotations.tsv.gz"
+vog_annotations_gz: "vog.annotations.tsv.gz"
+vog_annotations_file: "vog.annotations.tsv"
