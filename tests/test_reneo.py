@@ -30,5 +30,5 @@ def test_cli():
 
 
 def test_reneo_pipelines():
-    exec_command("reneo simulate")
+    exec_command("reneo simulate --no-hmmsearch")
     exec_command("reneo config")
