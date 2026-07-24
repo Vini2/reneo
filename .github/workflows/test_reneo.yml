@@ -33,7 +33,7 @@ jobs:
           activate-environment: reneo
           environment-file: build/environment.yml
           python-version: ${{ matrix.python-version }}
-          auto-activate-base: false
+          auto-activate: true
           channels: conda-forge,bioconda,anaconda
           channel-priority: true
           conda-remove-defaults: "true"
