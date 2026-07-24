@@ -6,8 +6,11 @@ import queue
 import sys
 import threading
 import time
+from itertools import product
 
 import networkx as nx
+import numpy as np
+from scipy.cluster.hierarchy import fcluster, linkage
 from igraph import *
 from reneo_utils import component_utils, edge_graph_utils, flow_utils, gene_utils
 from reneo_utils.coverage_utils import get_unitig_coverage
@@ -29,6 +32,22 @@ __version__ = "0.5.0"
 __maintainer__ = "Vijini Mallawaarachchi"
 __email__ = "viji.mallawaarachchi@gmail.com"
 __status__ = "Development"
+
+DNA_ALPHABET = "ACGT"
+DNA_COMPLEMENT = str.maketrans("ACGT", "TGCA")
+
+
+def reverse_complement(seq):
+    return seq.translate(DNA_COMPLEMENT)[::-1]
+
+
+CANONICAL_4MERS = sorted(
+    {
+        min("".join(kmer), reverse_complement("".join(kmer)))
+        for kmer in product(DNA_ALPHABET, repeat=4)
+    }
+)
+CANONICAL_4MER_INDEX = {kmer: i for i, kmer in enumerate(CANONICAL_4MERS)}
 
 
 def setup_logging(**kwargs):
@@ -55,6 +74,7 @@ def results_dict():
     results = {
         "resolved_edges": set(),
         "all_resolved_paths": [],
+        "case1_linear_candidates": [],
         "all_components": [],
         "cycle_components": set(),
         "linear_components": set(),
@@ -73,6 +93,117 @@ def results_dict():
         "genome_path_sets": set(),
     }
     return results
+
+
+def get_normalised_canonical_4mer_vector(sequence):
+    vector = np.zeros(len(CANONICAL_4MERS), dtype=float)
+    sequence = str(sequence).upper()
+
+    for i in range(0, len(sequence) - 3):
+        kmer = sequence[i : i + 4]
+        if any(base not in DNA_ALPHABET for base in kmer):
+            continue
+
+        canonical_kmer = min(kmer, reverse_complement(kmer))
+        vector[CANONICAL_4MER_INDEX[canonical_kmer]] += 1
+
+    vector_sum = vector.sum()
+    if vector_sum > 0:
+        vector = vector / vector_sum
+
+    return vector
+
+
+def get_unitig_coverage_profiles(coverage):
+    coverage_profiles = {}
+
+    with open(coverage, "r") as myfile:
+        for line in myfile.readlines():
+            if not line.startswith("Contig"):
+                strings = line.strip().split()
+                coverage_profiles[strings[0]] = [float(x) for x in strings[1:]]
+
+    return coverage_profiles
+
+
+def cluster_case1_linear_candidates(candidates, **kwargs):
+    if len(candidates) == 0:
+        return []
+
+    candidates = sorted(candidates, key=lambda x: (x["component_id"], x["unitig_name"]))
+
+    if len(candidates) == 1:
+        labels = np.array([1])
+    else:
+        kmer_features = np.array(
+            [
+                get_normalised_canonical_4mer_vector(candidate["path"])
+                for candidate in candidates
+            ]
+        )
+        coverage_features = np.array(
+            [candidate["coverage_profile"] for candidate in candidates], dtype=float
+        )
+        coverage_features = np.log1p(coverage_features)
+
+        coverage_feature_stds = coverage_features.std(axis=0)
+        coverage_feature_stds[coverage_feature_stds == 0] = 1
+        coverage_features = (
+            coverage_features - coverage_features.mean(axis=0)
+        ) / coverage_feature_stds
+
+        coverage_features = coverage_features * kwargs["c1covw"]
+        features = np.hstack((kmer_features, coverage_features))
+
+        linkage_matrix = linkage(features, method="average", metric="euclidean")
+        labels = fcluster(
+            linkage_matrix,
+            t=kwargs["c1dist"],
+            criterion="distance",
+        )
+
+    clustered_paths = []
+    for cluster_idx, label in enumerate(sorted(set(labels)), start=1):
+        cluster_candidates = [
+            candidate
+            for candidate, candidate_label in zip(candidates, labels)
+            if candidate_label == label
+        ]
+        cluster_candidates.sort(key=lambda x: (x["component_id"], x["unitig_name"]))
+
+        path_string = ("N" * kwargs["c1gap"]).join(
+            [candidate["path"] for candidate in cluster_candidates]
+        )
+        length = len(path_string)
+        coverage = sum(
+            candidate["coverage"] * candidate["length"]
+            for candidate in cluster_candidates
+        ) / sum(candidate["length"] for candidate in cluster_candidates)
+
+        clustered_paths.append(
+            GenomePath(
+                id=f"virus_case1_linear_cluster_{cluster_idx}",
+                bubble_case="case1_linear_cluster",
+                node_order=[
+                    candidate["unitig_name"] for candidate in cluster_candidates
+                ],
+                node_id_order=[
+                    candidate["node_id"] for candidate in cluster_candidates
+                ],
+                path=path_string,
+                coverage=int(coverage),
+                length=length,
+                gc=(path_string.count("G") + path_string.count("C"))
+                / length
+                * 100,
+            )
+        )
+
+    kwargs["logger"].info(
+        f"Clustered {len(candidates)} case 1 linear unitigs into {len(clustered_paths)} genome clusters"
+    )
+
+    return clustered_paths
 
 
 def merge_results(orig_res, new_res):
@@ -1450,20 +1581,38 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
             cycle_number = 1
 
-            # Create GenomePath object with path details
-            genome_path = GenomePath(
-                id=f"virus_comp_{my_count}_cycle_{cycle_number}",
-                bubble_case=case_name,
-                node_order=[kwargs["unitig_names"][candidate_nodes[0]]],
-                node_id_order=[candidate_nodes[0]],
-                path=path_string,
-                coverage=int(kwargs["unitig_coverages"][unitig_name]),
-                length=len(kwargs["graph_unitigs"][unitig_name]),
-                gc=(path_string.count("G") + path_string.count("C"))
-                / len(path_string)
-                * 100,
-            )
-            my_genomic_paths.append(genome_path)
+            if case_name == "case1_linear":
+                results["case1_linear_candidates"].append(
+                    {
+                        "component_id": my_count,
+                        "node_id": candidate_nodes[0],
+                        "unitig_name": unitig_name,
+                        "path": path_string,
+                        "coverage": kwargs["unitig_coverages"][unitig_name],
+                        "coverage_profile": kwargs[
+                            "unitig_coverage_profiles"
+                        ].get(
+                            unitig_name,
+                            [kwargs["unitig_coverages"][unitig_name]],
+                        ),
+                        "length": len(path_string),
+                    }
+                )
+            else:
+                # Create GenomePath object with path details
+                genome_path = GenomePath(
+                    id=f"virus_comp_{my_count}_cycle_{cycle_number}",
+                    bubble_case=case_name,
+                    node_order=[kwargs["unitig_names"][candidate_nodes[0]]],
+                    node_id_order=[candidate_nodes[0]],
+                    path=path_string,
+                    coverage=int(kwargs["unitig_coverages"][unitig_name]),
+                    length=len(kwargs["graph_unitigs"][unitig_name]),
+                    gc=(path_string.count("G") + path_string.count("C"))
+                    / len(path_string)
+                    * 100,
+                )
+                my_genomic_paths.append(genome_path)
             results["resolved_components"].add(my_count)
             results["single_unitigs"].add(my_count)
             results["case1_resolved"].add(my_count)
@@ -1630,6 +1779,15 @@ def main(**kwargs):
     kwargs["logger"].info(
         f"Coverage multipler for flow interval modelling: {kwargs['alpha']}"
     )
+    kwargs["logger"].info(
+        f"Case 1 linear clustering distance threshold: {kwargs['c1dist']}"
+    )
+    kwargs["logger"].info(
+        f"Case 1 linear clustering coverage weight: {kwargs['c1covw']}"
+    )
+    kwargs["logger"].info(
+        f"Case 1 linear cluster segment gap length: {kwargs['c1gap']}"
+    )
     kwargs["logger"].info(f"Number of threads to use: {kwargs['nthreads']}")
     kwargs["logger"].info(f"Output folder: {kwargs['output']}")
 
@@ -1696,6 +1854,9 @@ def main(**kwargs):
     # ----------------------------------------------------------------------
     kwargs["logger"].info("Getting unitig coverage")
     kwargs["unitig_coverages"] = get_unitig_coverage(kwargs["coverage"])
+    kwargs["unitig_coverage_profiles"] = get_unitig_coverage_profiles(
+        kwargs["coverage"]
+    )
 
     kwargs["logger"].info("Getting junction pe coverage")
     with open(kwargs["pickle_file"], "rb") as handle:
@@ -1739,6 +1900,13 @@ def main(**kwargs):
             results_queue.get()
         )  # Dequeue (get and remove) the element from the front of the queue
         results = merge_results(results, r)
+
+    case1_linear_clusters = cluster_case1_linear_candidates(
+        results["case1_linear_candidates"], **kwargs
+    )
+    if len(case1_linear_clusters) > 0:
+        results["all_resolved_paths"] += case1_linear_clusters
+        results["genome_path_sets"].add(tuple(case1_linear_clusters))
 
     # Get unresolved edges
     results["unresolved_virus_like_edges"] = results["all_virus_like_edges"].difference(
@@ -1892,6 +2060,9 @@ if __name__ == "__main__":
         nvogs=int(snakemake.params.nvogs),
         covtol=float(snakemake.params.covtol),
         alpha=float(snakemake.params.alpha),
+        c1dist=float(snakemake.params.c1dist),
+        c1covw=float(snakemake.params.c1covw),
+        c1gap=int(snakemake.params.c1gap),
         output=snakemake.params.output,
         nthreads=snakemake.threads,
         log=snakemake.log.stderr,

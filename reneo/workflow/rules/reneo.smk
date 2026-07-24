@@ -28,6 +28,9 @@ rule run_reneo:
         nvogs = config['nvogs'],
         covtol = config['covtol'],
         alpha = config['alpha'],
+        c1dist = config['c1dist'],
+        c1covw = config['c1covw'],
+        c1gap = config['c1gap'],
         output = RESDIR,
     threads:
         config["resources"]["big"]["cpu"]
