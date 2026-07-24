@@ -38,7 +38,7 @@ setup(
     data_files=get_data_files(),
     py_modules=["reneo"],
     install_requires=[
-        "snakemake>=7.14.0",
+        "snakemake>=7.14.0,<8",
         "pyyaml>=6.0",
         "click>=8.1.3",
         "metasnek>=0.0.5",
