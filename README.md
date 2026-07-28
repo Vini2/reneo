@@ -36,7 +36,7 @@ conda create -n reneo -c conda-forge -c anaconda -c bioconda reneo
 conda activate reneo
 ```
 
-Now you can go to [Setting up Gurobi](#setting-up-gurobi) to configure Gurobi.
+The MFD solver dependencies are included with the environment.
 
 ### Option 2: Installing Reneo using pip
 
@@ -46,23 +46,13 @@ You can install Reneo from PyPI at [https://pypi.org/project/phables/](https://p
 pip install reneo
 ```
 
-Now you can go to [Setting up Gurobi](#setting-up-gurobi) to configure Gurobi.
+The MFD solver dependencies are installed automatically.
 
-### Setting up Gurobi
+### MFD solver
 
-The MFD implementation uses the linear programming solver [Gurobi](https://www.gurobi.com/). The `reneo` conda environment does not include Gurobi. You have to install Gurobi using the following command.
-
-```bash
-conda install -c gurobi gurobi
-```
-
-To handle large models without any model size limitations, once you have installed Gurobi, you have to activate the (academic) license and add the key using the following command. You only have to do this once.
-
-```bash
-grbgetkey <KEY>
-```
-
-You can refer to further instructions at [https://www.gurobi.com/academia/academic-program-and-licenses/](https://www.gurobi.com/academia/academic-program-and-licenses/). 
+The MFD implementation uses [flowpaths](https://github.com/algbio/flowpaths),
+which installs the open source HiGHS solver by default. No separate Gurobi
+installation or license is required.
 
 
 ## Quick Start Guide
@@ -111,7 +101,9 @@ Reneo is still under testing. Please report any issues and suggestions under [Re
 
 ## Acknowledgement
 
-Reneo uses the [Gurobi](https://www.gurobi.com/) implementation of [MFD-ILP](https://github.com/algbio/MFD-ILP) and code snippets from [Phables](https://github.com/Vini2/phables/). The Reneo logo was designed by [Laura Inglis](https://fame.flinders.edu.au/people/2021/01/01/laura-inglis).
+Reneo uses [flowpaths](https://github.com/algbio/flowpaths) for minimum flow
+decomposition and code snippets from [Phables](https://github.com/Vini2/phables/).
+The Reneo logo was designed by [Laura Inglis](https://fame.flinders.edu.au/people/2021/01/01/laura-inglis).
 
 
 ## Citation
