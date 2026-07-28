@@ -14,6 +14,100 @@ __status__ = "Development"
 
 FASTA_LINE_LEN = 60
 
+
+def get_augmented_gfa_path(**kwargs):
+    graph_basename = os.path.basename(kwargs["graph"])
+
+    if graph_basename.endswith(".gfa"):
+        graph_basename = graph_basename[:-4]
+
+    return f"{kwargs['output']}/{graph_basename}.augmented.gfa"
+
+
+def get_augmented_summary_path(**kwargs):
+    graph_basename = os.path.basename(kwargs["graph"])
+
+    if graph_basename.endswith(".gfa"):
+        graph_basename = graph_basename[:-4]
+
+    return f"{kwargs['output']}/{graph_basename}.augmented.summary.tsv"
+
+
+def write_augmented_gfa(**kwargs):
+    """
+    Write the original GFA plus inferred case 3 extension links.
+    """
+
+    augmented_gfa = get_augmented_gfa_path(**kwargs)
+    inferred_links = kwargs.get("inferred_case3_links", {})
+
+    with open(kwargs["graph"]) as source, open(augmented_gfa, "w") as target:
+        for line in source:
+            target.write(line)
+            if not line.endswith("\n"):
+                target.write("\n")
+
+        for (left, right), metadata in sorted(
+            inferred_links.items(), key=lambda item: (item[1]["round"], item[0])
+        ):
+            target.write(
+                f"L\t{left[:-1]}\t{left[-1]}\t{right[:-1]}\t{right[-1]}\t0M"
+            )
+            target.write(f"\tRC:i:{metadata['support']}")
+            target.write(f"\tPE:i:{metadata.get('pe_support', 0)}")
+            target.write(f"\tSR:i:{metadata.get('spanning_support', 0)}")
+            target.write(f"\tIR:i:{metadata['round']}")
+            target.write("\tRN:Z:case3_extension\n")
+
+    kwargs["logger"].info(
+        f"Augmented assembly graph written to {augmented_gfa} with {len(inferred_links)} inferred case 3 links"
+    )
+
+    return augmented_gfa
+
+
+def write_augmented_summary(**kwargs):
+    """
+    Write a TSV summary of inferred case 3 extension links.
+    """
+
+    summary_file = get_augmented_summary_path(**kwargs)
+    inferred_links = kwargs.get("inferred_case3_links", {})
+
+    with open(summary_file, "w") as target:
+        target.write(
+            "round\tleft_oriented_contig\tright_oriented_contig\t"
+            "left_contig\tright_contig\tlink_type\tleft_endpoint_type\t"
+            "right_endpoint_type\tleft_component\tright_component\t"
+            "support\tpe_support\tspanning_support\n"
+        )
+
+        for (left, right), metadata in sorted(
+            inferred_links.items(), key=lambda item: (item[1]["round"], item[0])
+        ):
+            target.write(
+                f"{metadata['round']}\t{left}\t{right}\t{left[:-1]}\t{right[:-1]}\t"
+            )
+            target.write(
+                f"{metadata.get('link_type', 'unknown')}\t"
+                f"{metadata.get('left_endpoint_type', 'unknown')}\t"
+                f"{metadata.get('right_endpoint_type', 'unknown')}\t"
+                f"{metadata.get('left_component', 'NA')}\t"
+                f"{metadata.get('right_component', 'NA')}\t"
+            )
+            target.write(
+                f"{metadata['support']}\t"
+                f"{metadata.get('pe_support', 0)}\t"
+                f"{metadata.get('spanning_support', 0)}\n"
+            )
+
+    kwargs["logger"].info(
+        f"Case 3 graph augmentation summary written to {summary_file}"
+    )
+
+    return summary_file
+
+
 def write_unitigs(nodes, unitig_names, graph_unitigs, filename, output):
     """
     Write unitigs to FASTA file

@@ -11,9 +11,12 @@ import networkx as nx
 from igraph import *
 from reneo_utils import component_utils, edge_graph_utils, flow_utils, gene_utils
 from reneo_utils.coverage_utils import get_unitig_coverage
+from reneo_utils.graph_augmentation_utils import augment_case3_linear_components
 from reneo_utils.genome_utils import GenomeComponent, GenomePath
 from reneo_utils.output_utils import (
     init_files,
+    write_augmented_gfa,
+    write_augmented_summary,
     write_component_info,
     write_component_vog_info,
     write_path,
@@ -1700,6 +1703,22 @@ def main(**kwargs):
     kwargs["logger"].info("Getting junction pe coverage")
     with open(kwargs["pickle_file"], "rb") as handle:
         kwargs["junction_pe_coverage"] = pickle.load(handle)
+
+    # Augment incomplete case 3 linear components using strand-aware PE evidence
+    # ----------------------------------------------------------------------
+    kwargs["inferred_case3_links"] = {}
+    links_added = augment_case3_linear_components(**kwargs)
+
+    if links_added > 0:
+        kwargs["pruned_vs"], kwargs["comp_vogs"] = component_utils.get_components(
+            **kwargs
+        )
+        kwargs["logger"].info(
+            f"Total number of components found after graph augmentation: {len(kwargs['pruned_vs'])}"
+        )
+
+    kwargs["augmented_gfa"] = write_augmented_gfa(**kwargs)
+    kwargs["augmented_summary"] = write_augmented_summary(**kwargs)
 
     # Set up worker queues
     component_queue = queue.Queue()

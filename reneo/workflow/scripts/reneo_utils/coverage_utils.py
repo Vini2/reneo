@@ -65,6 +65,279 @@ def read_pair_generator(bam, region_string=None):
     return read_dict
 
 
+def get_read_orientation(read):
+    """
+    Return the reference strand used by a read alignment.
+    """
+
+    return "-" if read.is_reverse else "+"
+
+
+def get_opposite_orientation(orientation):
+    """
+    Return the opposite orientation sign.
+    """
+
+    return "-" if orientation == "+" else "+"
+
+
+def add_oriented_pair_support_from_fields(
+    link_counts, read_name, read_orientation, mate_name, mate_orientation
+):
+    """
+    Count oriented adjacency from a read record and its mate fields.
+    """
+
+    left = f"{read_name}{read_orientation}"
+    right = f"{mate_name}{get_opposite_orientation(mate_orientation)}"
+    link_counts[(left, right)] += 1
+
+    rc_left = f"{mate_name}{mate_orientation}"
+    rc_right = f"{read_name}{get_opposite_orientation(read_orientation)}"
+    link_counts[(rc_left, rc_right)] += 1
+
+
+def add_oriented_spanning_read_support(link_counts, left_read, right_read):
+    """
+    Count the oriented adjacency implied by two alignments of the same read.
+    """
+
+    left_orientation = get_read_orientation(left_read)
+    right_orientation = get_read_orientation(right_read)
+
+    left = f"{left_read.reference_name}{left_orientation}"
+    right = f"{right_read.reference_name}{right_orientation}"
+    link_counts[(left, right)] += 1
+
+    rc_left = f"{right_read.reference_name}{get_opposite_orientation(right_orientation)}"
+    rc_right = f"{left_read.reference_name}{get_opposite_orientation(left_orientation)}"
+    link_counts[(rc_left, rc_right)] += 1
+
+
+def find_oriented_links_for_pairs_in_bam(bam_queue, result_queue, target_pairs):
+    link_counts = defaultdict(int)
+    target_pairs = set(target_pairs)
+    target_contigs = set()
+    for pair in target_pairs:
+        target_contigs.update(pair)
+
+    while True:
+        bam_file = bam_queue.get()
+        if bam_file is None:
+            break
+
+        with pysam.AlignmentFile(bam_file, "rb") as bam:
+            references = set(bam.references)
+            for contig in sorted(target_contigs.intersection(references)):
+                for read in bam.fetch(contig):
+                    if (
+                        read.is_secondary
+                        or read.is_supplementary
+                        or read.is_unmapped
+                        or read.mate_is_unmapped
+                        or not read.is_read1
+                        or read.reference_name == read.next_reference_name
+                        or read.next_reference_name not in target_contigs
+                    ):
+                        continue
+
+                    pair = tuple(
+                        sorted([read.reference_name, read.next_reference_name])
+                    )
+                    if pair in target_pairs:
+                        mate_orientation = "-" if read.mate_is_reverse else "+"
+                        add_oriented_pair_support_from_fields(
+                            link_counts,
+                            read.reference_name,
+                            get_read_orientation(read),
+                            read.next_reference_name,
+                            mate_orientation,
+                        )
+
+    result_queue.put(link_counts)
+
+
+def find_oriented_spanning_reads_for_pairs_in_bam(
+    bam_queue, result_queue, target_pairs
+):
+    link_counts = defaultdict(int)
+    target_pairs = set(target_pairs)
+    target_contigs = set()
+    for pair in target_pairs:
+        target_contigs.update(pair)
+
+    while True:
+        bam_file = bam_queue.get()
+        if bam_file is None:
+            break
+
+        with pysam.AlignmentFile(bam_file, "rb") as bam:
+            reads = defaultdict(list)
+            references = set(bam.references)
+
+            for contig in sorted(target_contigs.intersection(references)):
+                for read in bam.fetch(contig):
+                    if read.is_unmapped or read.is_secondary:
+                        continue
+
+                    read_end = 1 if read.is_read1 else 2 if read.is_read2 else 0
+                    reads[(read.query_name, read_end)].append(read)
+
+            for alignments in reads.values():
+                if len(alignments) < 2:
+                    continue
+
+                alignments = sorted(
+                    alignments,
+                    key=lambda read: (
+                        read.query_alignment_start,
+                        read.query_alignment_end,
+                        read.reference_name,
+                        read.reference_start,
+                    ),
+                )
+
+                seen_pairs = set()
+                for i in range(len(alignments) - 1):
+                    left = alignments[i]
+                    right = alignments[i + 1]
+
+                    if left.reference_name == right.reference_name:
+                        continue
+
+                    pair = tuple(sorted([left.reference_name, right.reference_name]))
+                    if pair not in target_pairs:
+                        continue
+
+                    read_pair = (
+                        left.reference_name,
+                        left.reference_start,
+                        right.reference_name,
+                        right.reference_start,
+                    )
+                    if read_pair in seen_pairs:
+                        continue
+
+                    seen_pairs.add(read_pair)
+                    add_oriented_spanning_read_support(link_counts, left, right)
+
+    result_queue.put(link_counts)
+
+
+def get_oriented_junction_pe_coverage_for_pairs(
+    bam_path, output, target_pairs, nthreads
+):
+    """
+    Get strand-aware PE support for selected unordered contig pairs.
+    """
+
+    target_pairs = sorted(set([tuple(sorted(x)) for x in target_pairs]))
+    cache_file = f"{output}/oriented_junction_pe_coverage.pickle"
+
+    if os.path.isfile(cache_file):
+        with open(cache_file, "rb") as handle:
+            cached = pickle.load(handle)
+
+        if (
+            isinstance(cached, dict)
+            and cached.get("target_pairs") == target_pairs
+            and "counts" in cached
+        ):
+            return cached["counts"]
+
+    bam_queue = queue.Queue()
+    result_queue = queue.Queue()
+    bam_files = glob.glob(bam_path + "/*.bam")
+
+    for bam_file in bam_files:
+        bam_queue.put(bam_file)
+
+    threads = []
+    for _ in range(nthreads):
+        bam_queue.put(None)
+        thread = threading.Thread(
+            target=find_oriented_links_for_pairs_in_bam,
+            args=(bam_queue, result_queue, target_pairs),
+        )
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    link_counts = defaultdict(int)
+    while not result_queue.empty():
+        links = result_queue.get()
+        for ctgs, count in links.items():
+            link_counts[ctgs] += count
+
+    with open(cache_file, "wb") as handle:
+        pickle.dump(
+            {"target_pairs": target_pairs, "counts": link_counts},
+            handle,
+            protocol=pickle.HIGHEST_PROTOCOL,
+        )
+
+    return link_counts
+
+
+def get_oriented_spanning_read_coverage_for_pairs(
+    bam_path, output, target_pairs, nthreads
+):
+    """
+    Get strand-aware split-read support for selected unordered contig pairs.
+    """
+
+    target_pairs = sorted(set([tuple(sorted(x)) for x in target_pairs]))
+    cache_file = f"{output}/oriented_spanning_read_coverage.pickle"
+
+    if os.path.isfile(cache_file):
+        with open(cache_file, "rb") as handle:
+            cached = pickle.load(handle)
+
+        if (
+            isinstance(cached, dict)
+            and cached.get("target_pairs") == target_pairs
+            and "counts" in cached
+        ):
+            return cached["counts"]
+
+    bam_queue = queue.Queue()
+    result_queue = queue.Queue()
+    bam_files = glob.glob(bam_path + "/*.bam")
+
+    for bam_file in bam_files:
+        bam_queue.put(bam_file)
+
+    threads = []
+    for _ in range(nthreads):
+        bam_queue.put(None)
+        thread = threading.Thread(
+            target=find_oriented_spanning_reads_for_pairs_in_bam,
+            args=(bam_queue, result_queue, target_pairs),
+        )
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    link_counts = defaultdict(int)
+    while not result_queue.empty():
+        links = result_queue.get()
+        for ctgs, count in links.items():
+            link_counts[ctgs] += count
+
+    with open(cache_file, "wb") as handle:
+        pickle.dump(
+            {"target_pairs": target_pairs, "counts": link_counts},
+            handle,
+            protocol=pickle.HIGHEST_PROTOCOL,
+        )
+
+    return link_counts
+
+
 def find_links_in_bam(bam_queue, result_queue):
     link_counts = defaultdict(int)
     while True:
