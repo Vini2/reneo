@@ -574,7 +574,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                     edge_list_indices[u_index] = u
                     edge_list_indices[v_index] = v
 
-                    juction_cov = kwargs["junction_pe_coverage"][(u[:-1], v[:-1])]
+                    junction_cov = kwargs["junction_pe_coverage"][(u[:-1], v[:-1])]
 
                     if v_index == 0:
                         final_vertex = len(candidate_nodes)
@@ -590,10 +590,10 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         cov_upper_bound = int(max_comp_cov * kwargs["alpha"])
 
                         kwargs["logger"].debug(
-                            f"({v}, {u}), {juction_cov}, {cov_lower_bound}, {cov_upper_bound}"
+                            f"({v}, {u}), {junction_cov}, {cov_lower_bound}, {cov_upper_bound}"
                         )
 
-                        if juction_cov == 0:
+                        if junction_cov == 0:
                             network_edges.append(
                                 (u_index, final_vertex, cov_lower_bound, cov_upper_bound)
                             )
@@ -610,7 +610,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         visited_edges.append((u_index, final_vertex))
 
                         # Add subpaths based on junction coverage
-                        if juction_cov >= kwargs["mincov"]:
+                        if junction_cov >= kwargs["mincov"]:
                             kwargs["logger"].debug(
                                 f"Adding subpath {[u_name, v_name]}"
                             )
@@ -1028,7 +1028,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         edge_list_indices[u_index] = u
                         edge_list_indices[v_index] = v
 
-                        juction_cov = kwargs["junction_pe_coverage"][(u[:-1], v[:-1])]
+                        junction_cov = kwargs["junction_pe_coverage"][(u[:-1], v[:-1])]
 
                         if (u_index, v_index) not in visited_edges and (
                             v_index,
@@ -1039,10 +1039,10 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                             cov_upper_bound = int(max_comp_cov * kwargs["alpha"])
 
                             kwargs["logger"].debug(
-                                f"({v}, {u}), ({u_index}, {v_index}), {juction_cov}, {cov_lower_bound}, {cov_upper_bound}"
+                                f"({v}, {u}), ({u_index}, {v_index}), {junction_cov}, {cov_lower_bound}, {cov_upper_bound}"
                             )
 
-                            if juction_cov == 0:
+                            if junction_cov == 0:
                                 network_edges.append(
                                     (u_index, v_index, 0, cov_upper_bound)
                                 )
@@ -1059,7 +1059,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                             visited_edges.append((u_index, v_index))
 
                             # Add subpaths based on junction coverage
-                            if juction_cov >= kwargs["mincov"]:
+                            if junction_cov >= kwargs["mincov"]:
                                 kwargs["logger"].debug(
                                     f"Adding subpath {[u_name, v_name]}"
                                 )
