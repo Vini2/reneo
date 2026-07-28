@@ -40,7 +40,7 @@ The MFD solver dependencies are included with the environment.
 
 ### Option 2: Installing Reneo using pip
 
-You can install Reneo from PyPI at [https://pypi.org/project/phables/](https://pypi.org/project/reneo/). Make sure you have [`pip`](https://pip.pypa.io/en/stable/) and [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) installed.
+You can install Reneo from PyPI at [https://pypi.org/project/reneo/](https://pypi.org/project/reneo/). Make sure you have [`pip`](https://pip.pypa.io/en/stable/) and [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) installed.
 
 ```bash
 pip install reneo
