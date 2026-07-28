@@ -28,9 +28,6 @@ reneo:
     nvogs: 10
     covtol: 100
     alpha: 1.2
-    c1dist: 0.25
-    c1covw: 0.25
-    c1gap: 100
     koverage_args:
         --rerun-triggers mtime
         --printshellcmds
