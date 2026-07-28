@@ -48,12 +48,6 @@ pip install reneo
 
 The MFD solver dependencies are installed automatically.
 
-### MFD solver
-
-The MFD implementation uses [flowpaths](https://github.com/algbio/flowpaths),
-which installs the open source HiGHS solver by default. No separate Gurobi
-installation or license is required.
-
 
 ## Quick Start Guide
 
@@ -101,8 +95,7 @@ Reneo is still under testing. Please report any issues and suggestions under [Re
 
 ## Acknowledgement
 
-Reneo uses [flowpaths](https://github.com/algbio/flowpaths) for minimum flow
-decomposition and code snippets from [Phables](https://github.com/Vini2/phables/).
+Reneo uses [flowpaths](https://github.com/algbio/flowpaths) for minimum flow decomposition and code snippets from [Phables](https://github.com/Vini2/phables/).
 The Reneo logo was designed by [Laura Inglis](https://fame.flinders.edu.au/people/2021/01/01/laura-inglis).
 
 
