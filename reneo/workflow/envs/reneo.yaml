@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - anaconda
   - bioconda
-  - gurobi
 dependencies:
   - python>=3.8
   - biopython
@@ -13,10 +12,9 @@ dependencies:
   - scipy
   - numpy<2.0.0
   - pandas
-  - gurobi>=10.0.0
-  - more-itertools
   - tqdm
   - click
   - pip
   - pip:
       - metasnek>=0.0.3
+      - flowpaths>=0.2.20
