@@ -4,6 +4,7 @@ import networkx as nx
 from reneo_utils import component_utils, flow_utils
 from reneo_utils.coverage_utils import (
     get_opposite_orientation,
+    get_oriented_external_endpoint_read_support,
     get_oriented_junction_pe_coverage_for_pairs,
     get_oriented_spanning_read_coverage_for_pairs,
 )
@@ -188,6 +189,84 @@ def get_candidate_extension_pairs(isolated_unitigs, terminal_unitigs, **kwargs):
             candidate_pairs.add(tuple(sorted([contig_1, contig_2])))
 
     return candidate_pairs
+
+
+def is_viral_singleton_candidate(unitig_name, **kwargs):
+    if unitig_name in kwargs["smg_unitigs"]:
+        return False
+
+    if unitig_name not in kwargs["unitig_vogs"]:
+        return False
+
+    if len(kwargs["unitig_vogs"][unitig_name]) < kwargs["nvogs"]:
+        return False
+
+    if kwargs["edges_lengths"][unitig_name] <= kwargs["minlength"]:
+        return False
+
+    return True
+
+
+def add_silent_isolated_linear_unitigs(**kwargs):
+    """
+    Add isolated linear viral unitigs with no external end-linking evidence.
+    """
+
+    isolated_unitigs = get_isolated_linear_unitigs(**kwargs)
+    augmented_unitigs = set()
+
+    for left, right in kwargs.get("inferred_case3_links", {}):
+        augmented_unitigs.add(left[:-1])
+        augmented_unitigs.add(right[:-1])
+
+    candidate_unitigs = sorted(
+        [
+            unitig
+            for unitig in isolated_unitigs
+            if unitig not in augmented_unitigs
+            and is_viral_singleton_candidate(unitig, **kwargs)
+        ]
+    )
+
+    if len(candidate_unitigs) == 0:
+        kwargs.setdefault("silent_isolated_unitigs", {}).clear()
+        kwargs["logger"].info(
+            "Added 0 isolated linear unitigs with no external end-linking evidence as case1 candidates"
+        )
+        return 0
+
+    endpoint_support = get_oriented_external_endpoint_read_support(
+        kwargs["bampath"], kwargs["output"], candidate_unitigs, kwargs["nthreads"]
+    )
+
+    next_component_id = max(kwargs["pruned_vs"].keys(), default=-1) + 1
+    silent_unitigs = kwargs.setdefault("silent_isolated_unitigs", {})
+    silent_unitigs.clear()
+
+    for unitig in candidate_unitigs:
+        plus_support = endpoint_support.get(f"{unitig}+", 0)
+        minus_support = endpoint_support.get(f"{unitig}-", 0)
+
+        if plus_support + minus_support != 0:
+            continue
+
+        component_id = next_component_id
+        next_component_id += 1
+        vertex_id = kwargs["unitig_names_rev"][unitig]
+        kwargs["pruned_vs"][component_id] = [vertex_id]
+        kwargs["comp_vogs"][component_id] = kwargs["unitig_vogs"].get(unitig, set())
+        silent_unitigs[unitig] = {
+            "component_id": component_id,
+            "plus_external_support": plus_support,
+            "minus_external_support": minus_support,
+        }
+
+    kwargs["silent_isolated_unitigs"] = silent_unitigs
+    kwargs["logger"].info(
+        f"Added {len(silent_unitigs)} isolated linear unitigs with no external end-linking evidence as case1 candidates"
+    )
+
+    return len(silent_unitigs)
 
 
 def add_inferred_oriented_link(left, right, support, **kwargs):

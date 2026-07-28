@@ -114,6 +114,211 @@ def add_oriented_spanning_read_support(link_counts, left_read, right_read):
     link_counts[(rc_left, rc_right)] += 1
 
 
+def add_endpoint_support(endpoint_counts, left, right, target_contigs):
+    left_name = left[:-1]
+    right_name = right[:-1]
+
+    if left_name in target_contigs:
+        endpoint_counts[left] += 1
+    if right_name in target_contigs:
+        endpoint_counts[right] += 1
+
+
+def add_endpoint_pair_support_from_fields(
+    endpoint_counts,
+    read_name,
+    read_orientation,
+    mate_name,
+    mate_orientation,
+    target_contigs,
+):
+    left = f"{read_name}{read_orientation}"
+    right = f"{mate_name}{get_opposite_orientation(mate_orientation)}"
+    add_endpoint_support(endpoint_counts, left, right, target_contigs)
+
+    rc_left = f"{mate_name}{mate_orientation}"
+    rc_right = f"{read_name}{get_opposite_orientation(read_orientation)}"
+    add_endpoint_support(endpoint_counts, rc_left, rc_right, target_contigs)
+
+
+def add_endpoint_spanning_read_support(
+    endpoint_counts, left_read, right_read, target_contigs
+):
+    left_orientation = get_read_orientation(left_read)
+    right_orientation = get_read_orientation(right_read)
+
+    left = f"{left_read.reference_name}{left_orientation}"
+    right = f"{right_read.reference_name}{right_orientation}"
+    add_endpoint_support(endpoint_counts, left, right, target_contigs)
+
+    rc_left = f"{right_read.reference_name}{get_opposite_orientation(right_orientation)}"
+    rc_right = f"{left_read.reference_name}{get_opposite_orientation(left_orientation)}"
+    add_endpoint_support(endpoint_counts, rc_left, rc_right, target_contigs)
+
+
+def add_endpoint_sa_tag_support(endpoint_counts, read, target_contigs):
+    if not read.has_tag("SA"):
+        return
+
+    for alignment in read.get_tag("SA").split(";"):
+        if alignment == "":
+            continue
+
+        fields = alignment.split(",")
+        if len(fields) < 3:
+            continue
+
+        sa_reference_name = fields[0]
+        sa_orientation = fields[2]
+
+        if sa_reference_name == read.reference_name:
+            continue
+
+        left = f"{read.reference_name}{get_read_orientation(read)}"
+        right = f"{sa_reference_name}{sa_orientation}"
+        add_endpoint_support(endpoint_counts, left, right, target_contigs)
+
+        rc_left = f"{sa_reference_name}{get_opposite_orientation(sa_orientation)}"
+        rc_right = (
+            f"{read.reference_name}{get_opposite_orientation(get_read_orientation(read))}"
+        )
+        add_endpoint_support(endpoint_counts, rc_left, rc_right, target_contigs)
+
+
+def find_oriented_external_endpoint_read_support_in_bam(
+    bam_queue, result_queue, target_contigs
+):
+    endpoint_counts = defaultdict(int)
+    target_contigs = set(target_contigs)
+
+    while True:
+        bam_file = bam_queue.get()
+        if bam_file is None:
+            break
+
+        with pysam.AlignmentFile(bam_file, "rb") as bam:
+            references = set(bam.references)
+            reads = defaultdict(list)
+
+            for contig in sorted(target_contigs.intersection(references)):
+                for read in bam.fetch(contig):
+                    if read.is_unmapped or read.is_secondary:
+                        continue
+
+                    add_endpoint_sa_tag_support(endpoint_counts, read, target_contigs)
+
+                    if (
+                        not read.is_supplementary
+                        and not read.mate_is_unmapped
+                        and read.reference_name != read.next_reference_name
+                    ):
+                        mate_orientation = "-" if read.mate_is_reverse else "+"
+                        add_endpoint_pair_support_from_fields(
+                            endpoint_counts,
+                            read.reference_name,
+                            get_read_orientation(read),
+                            read.next_reference_name,
+                            mate_orientation,
+                            target_contigs,
+                        )
+
+                    read_end = 1 if read.is_read1 else 2 if read.is_read2 else 0
+                    reads[(read.query_name, read_end)].append(read)
+
+            for alignments in reads.values():
+                if len(alignments) < 2:
+                    continue
+
+                alignments = sorted(
+                    alignments,
+                    key=lambda read: (
+                        read.query_alignment_start,
+                        read.query_alignment_end,
+                        read.reference_name,
+                        read.reference_start,
+                    ),
+                )
+
+                seen_pairs = set()
+                for i in range(len(alignments) - 1):
+                    left = alignments[i]
+                    right = alignments[i + 1]
+
+                    if left.reference_name == right.reference_name:
+                        continue
+
+                    read_pair = (
+                        left.reference_name,
+                        left.reference_start,
+                        right.reference_name,
+                        right.reference_start,
+                    )
+                    if read_pair in seen_pairs:
+                        continue
+
+                    seen_pairs.add(read_pair)
+                    add_endpoint_spanning_read_support(
+                        endpoint_counts, left, right, target_contigs
+                    )
+
+    result_queue.put(endpoint_counts)
+
+
+def get_oriented_external_endpoint_read_support(bam_path, output, contigs, nthreads):
+    """
+    Count strand-aware external PE and split-read support touching selected contig ends.
+    """
+
+    contigs = sorted(set(contigs))
+    cache_file = f"{output}/oriented_external_endpoint_read_support.pickle"
+
+    if os.path.isfile(cache_file):
+        with open(cache_file, "rb") as handle:
+            cached = pickle.load(handle)
+
+        if (
+            isinstance(cached, dict)
+            and cached.get("contigs") == contigs
+            and "counts" in cached
+        ):
+            return cached["counts"]
+
+    bam_queue = queue.Queue()
+    result_queue = queue.Queue()
+    bam_files = glob.glob(bam_path + "/*.bam")
+
+    for bam_file in bam_files:
+        bam_queue.put(bam_file)
+
+    threads = []
+    for _ in range(nthreads):
+        bam_queue.put(None)
+        thread = threading.Thread(
+            target=find_oriented_external_endpoint_read_support_in_bam,
+            args=(bam_queue, result_queue, contigs),
+        )
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    endpoint_counts = defaultdict(int)
+    while not result_queue.empty():
+        counts = result_queue.get()
+        for endpoint, count in counts.items():
+            endpoint_counts[endpoint] += count
+
+    with open(cache_file, "wb") as handle:
+        pickle.dump(
+            {"contigs": contigs, "counts": endpoint_counts},
+            handle,
+            protocol=pickle.HIGHEST_PROTOCOL,
+        )
+
+    return endpoint_counts
+
+
 def find_oriented_links_for_pairs_in_bam(bam_queue, result_queue, target_pairs):
     link_counts = defaultdict(int)
     target_pairs = set(target_pairs)
