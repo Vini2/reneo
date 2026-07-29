@@ -160,7 +160,7 @@ def test_add_inferred_oriented_link_adds_primary_reverse_and_graph_edge(graph_au
     assert assembly_graph.edges == {(1, 2)}
 
 
-def test_add_complete_isolated_linear_unitigs_marks_pruned_no_support_candidates(
+def test_add_complete_isolated_linear_unitigs_adds_no_support_candidates(
     monkeypatch, graph_augmentation_utils
 ):
     monkeypatch.setattr(
@@ -168,8 +168,8 @@ def test_add_complete_isolated_linear_unitigs_marks_pruned_no_support_candidates
         "get_oriented_external_endpoint_read_support",
         lambda *args, **kwargs: defaultdict(int),
     )
-    pruned_vs = {7: [0]}
-    comp_vogs = {7: {"VOG1"}}
+    pruned_vs = {}
+    comp_vogs = {}
 
     count = graph_augmentation_utils.add_complete_isolated_linear_unitigs(
         assembly_graph=AssemblyGraph(components=[[0]]),
@@ -191,5 +191,5 @@ def test_add_complete_isolated_linear_unitigs_marks_pruned_no_support_candidates
     )
 
     assert count == 1
-    assert pruned_vs == {7: [0]}
-    assert comp_vogs == {7: {"VOG1"}}
+    assert pruned_vs == {0: [0]}
+    assert comp_vogs == {0: {"VOG1"}}
