@@ -3,7 +3,7 @@
 import tempfile
 import networkx as nx
 
-from .FD_Inexact import SolveInstances
+from .fd_inexact import SolveInstances
 
 __author__ = "Vijini Mallawaarachchi"
 __copyright__ = "Copyright 2023, Reneo Project"

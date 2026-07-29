@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 import logging
+import logging.handlers
+import multiprocessing
 import pickle
+import platform
 import queue
 import sys
-import threading
 import time
+from collections import defaultdict
 
 import networkx as nx
 from igraph import *
@@ -28,7 +31,10 @@ from reneo_utils.output_utils import (
     write_unitigs,
 )
 
-__author__ = "Vijini Mallawaarachchi"
+__author__ = (
+    "Vijini Mallawaarachchi",
+    "Michael Roach",
+)
 __copyright__ = "Copyright 2023, Reneo Project"
 __license__ = "MIT"
 __version__ = "0.5.0"
@@ -39,22 +45,91 @@ __status__ = "Development"
 
 def setup_logging(**kwargs):
 
-    logging.basicConfig(
-        filename=kwargs["log"],
-        level=logging.DEBUG,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
     logging.captureWarnings(True)
     logger = logging.getLogger(f"reneo {__version__}")
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
 
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+
+    formatter = logging.Formatter(
+        "%(asctime)s - %(processName)s - %(levelname)s - %(message)s"
+    )
+
+    file_handler = logging.FileHandler(kwargs["log"])
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.DEBUG)
+    logger.addHandler(file_handler)
+
     consoleHeader = logging.StreamHandler()
     consoleHeader.setFormatter(formatter)
     consoleHeader.setLevel(logging.INFO)
     logger.addHandler(consoleHeader)
 
     return logger
+
+
+def setup_worker_logging(log_queue):
+    logger = logging.getLogger(f"reneo {__version__}")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+
+    logger.addHandler(logging.handlers.QueueHandler(log_queue))
+    logging.captureWarnings(True)
+
+    return logger
+
+
+def default_link_list():
+    return defaultdict(list)
+
+
+def make_oriented_links_picklable(oriented_links):
+    return defaultdict(
+        default_link_list,
+        {
+            unitig_name: defaultdict(list, linked_unitigs)
+            for unitig_name, linked_unitigs in oriented_links.items()
+        },
+    )
+
+
+def component_work_items(pruned_vs):
+    return sorted(pruned_vs, key=lambda my_count: len(pruned_vs[my_count]), reverse=True)
+
+
+def genome_path_set_sort_key(final_genomic_paths):
+    return tuple(
+        (
+            getattr(path, "id", ""),
+            getattr(path, "bubble_case", ""),
+            tuple(getattr(path, "node_order", ())),
+        )
+        for path in final_genomic_paths
+    )
+
+
+def genome_path_sort_key(genome_path):
+    return (
+        getattr(genome_path, "id", ""),
+        getattr(genome_path, "bubble_case", ""),
+        tuple(getattr(genome_path, "node_order", ())),
+    )
+
+
+def multiprocessing_context():
+    if platform.system() in ("Linux", "Darwin"):
+        return multiprocessing.get_context("fork")
+    return multiprocessing.get_context("spawn")
+
+
+def worker_resolve_components_process(component_queue, results_queue, log_queue, kwargs):
+    kwargs["logger"] = setup_worker_logging(log_queue)
+    worker_resolve_components(component_queue, results_queue, **kwargs)
 
 
 def results_dict():
@@ -100,8 +175,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
         component_time_start = time.time()
         my_genomic_paths = []
-        original_candidate_nodes = kwargs["pruned_vs"][my_count]
-        candidate_nodes = kwargs["pruned_vs"][my_count]
+        original_candidate_nodes = list(kwargs["pruned_vs"][my_count])
+        candidate_nodes = list(kwargs["pruned_vs"][my_count])
         pruned_graph = kwargs["assembly_graph"].subgraph(candidate_nodes)
         has_cycles = False
         results["all_virus_like_edges"] = results["all_virus_like_edges"].union(
@@ -113,6 +188,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
         kwargs["logger"].debug(f"my_count: {my_count}")
         kwargs["logger"].debug(f"number of unitigs: {len(candidate_nodes)}")
         kwargs["logger"].debug(f"{candidate_nodes}")
+        kwargs["logger"].info(
+            f"Resolving component {my_count} with {len(candidate_nodes)} unitigs"
+        )
 
         in_degree = []
         out_degree = []
@@ -1580,6 +1658,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 kwargs["logger"].debug(
                     f"Elapsed time to resolve component {my_count} with {len(original_candidate_nodes)} nodes: {component_elapsed_time} seconds"
                 )
+                kwargs["logger"].info(
+                    f"Resolved component {my_count} with {len(final_genomic_paths)} paths in {component_elapsed_time:.2f} seconds"
+                )
 
         else:
             # single unitigs
@@ -1591,6 +1672,12 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
         # Add the paths for writing
         results["genome_path_sets"].add(tuple(final_genomic_paths))
+
+        if len(final_genomic_paths) == 0:
+            component_elapsed_time = time.time() - component_time_start
+            kwargs["logger"].info(
+                f"Finished component {my_count} with 0 paths in {component_elapsed_time:.2f} seconds"
+            )
 
     results_queue.put(results)
 
@@ -1696,7 +1783,7 @@ def main(**kwargs):
         f"Total number of components found: {len(kwargs['pruned_vs'])}"
     )
 
-    kwargs["logger"].info(kwargs["comp_vogs"])
+    kwargs["logger"].debug(kwargs["comp_vogs"])
 
     # Get unitig and junction pe coverages
     # ----------------------------------------------------------------------
@@ -1725,53 +1812,106 @@ def main(**kwargs):
 
     kwargs["augmented_gfa"] = write_augmented_gfa(**kwargs)
     kwargs["augmented_summary"] = write_augmented_summary(**kwargs)
-
-    # Set up worker queues
-    component_queue = queue.Queue()
-    results_queue = queue.Queue()
-
-    # Populate worker queue
-    for my_count in kwargs["pruned_vs"]:
-        component_queue.put(my_count)
-
-    # Send finish signals to queue for each worker
-    for _ in range(kwargs["nthreads"]):
-        component_queue.put(None)
-
-    # Set up multithreading
-    worker_threads = []
-    for _ in range(kwargs["nthreads"]):
-        t = threading.Thread(
-            target=worker_resolve_components,
-            args=(
-                component_queue,
-                results_queue,
-            ),
-            kwargs=kwargs,
-        )
-        t.start()
-        worker_threads.append(t)
-
-    # Wait for workers to finish
-    for t in worker_threads:
-        t.join()
+    kwargs["oriented_links"] = make_oriented_links_picklable(kwargs["oriented_links"])
 
     # Combine the results from all workers
     results = results_dict()
 
-    while not results_queue.empty():
-        r = (
-            results_queue.get()
-        )  # Dequeue (get and remove) the element from the front of the queue
-        results = merge_results(results, r)
+    component_ids = component_work_items(kwargs["pruned_vs"])
+    nworkers = min(max(kwargs["nthreads"], 1), len(component_ids))
+
+    if nworkers == 1:
+        component_queue = queue.Queue()
+        results_queue = queue.Queue()
+        for my_count in component_ids:
+            component_queue.put(my_count)
+        component_queue.put(None)
+        worker_resolve_components(component_queue, results_queue, **kwargs)
+        results = merge_results(results, results_queue.get())
+    else:
+        # Set up worker queues
+        mp_context = multiprocessing_context()
+        component_queue = mp_context.Queue()
+        results_queue = mp_context.Queue()
+        log_queue = mp_context.Queue()
+        log_listener = logging.handlers.QueueListener(
+            log_queue, *kwargs["logger"].handlers, respect_handler_level=True
+        )
+
+        # Populate worker queue
+        for my_count in component_ids:
+            component_queue.put(my_count)
+
+        # Send finish signals to queue for each worker
+        for _ in range(nworkers):
+            component_queue.put(None)
+
+        # Set up multiprocessing
+        worker_processes = []
+        worker_kwargs = dict(kwargs)
+        worker_kwargs["logger"] = None
+        for worker_id in range(nworkers):
+            p = mp_context.Process(
+                target=worker_resolve_components_process,
+                args=(
+                    component_queue,
+                    results_queue,
+                    log_queue,
+                    worker_kwargs,
+                ),
+                name=f"reneo-component-worker-{worker_id + 1}",
+            )
+            p.start()
+            worker_processes.append(p)
+        log_listener.start()
+
+        results_received = 0
+        try:
+            while results_received < len(worker_processes):
+                try:
+                    r = results_queue.get(timeout=1)
+                    results = merge_results(results, r)
+                    results_received += 1
+                except queue.Empty:
+                    failed_workers = [
+                        p for p in worker_processes if p.exitcode not in (None, 0)
+                    ]
+                    if failed_workers:
+                        failed = ", ".join(
+                            f"{p.name}={p.exitcode}" for p in failed_workers
+                        )
+                        raise RuntimeError(
+                            f"Component worker process failed: {failed}"
+                        )
+
+            # Wait for workers to finish
+            for p in worker_processes:
+                p.join()
+
+            failed_workers = [p for p in worker_processes if p.exitcode != 0]
+            if failed_workers:
+                failed = ", ".join(f"{p.name}={p.exitcode}" for p in failed_workers)
+                raise RuntimeError(f"Component worker process failed: {failed}")
+        finally:
+            for p in worker_processes:
+                if p.is_alive():
+                    p.terminate()
+            for p in worker_processes:
+                p.join()
+            log_listener.stop()
 
     # Get unresolved edges
     results["unresolved_virus_like_edges"] = results["all_virus_like_edges"].difference(
         results["resolved_edges"]
     )
+    results["all_resolved_paths"] = sorted(
+        results["all_resolved_paths"], key=genome_path_sort_key
+    )
 
     # write all the final genomic paths
-    for final_genomic_paths in results["genome_path_sets"]:
+    for final_genomic_paths in sorted(
+        results["genome_path_sets"], key=genome_path_set_sort_key
+    ):
         write_path(final_genomic_paths, kwargs["output"])
         if kwargs["genomes_folder"]:
             write_path_fasta(

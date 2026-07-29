@@ -82,7 +82,7 @@ rule find_junctions_and_pickle:
     conda:
         os.path.join("..", "envs", "reneo.yaml")
     script:
-        os.path.join("..", "scripts", "sampleJunctions.py")
+        os.path.join("..", "scripts", "sample_junctions.py")
 
 
 rule combine_junction_pickles:
@@ -98,4 +98,4 @@ rule combine_junction_pickles:
     conda:
         os.path.join("..","envs","reneo.yaml")
     script:
-        os.path.join("..","scripts","combineJunctionPickles.py")
+        os.path.join("..","scripts","combine_junction_pickles.py")
