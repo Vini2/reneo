@@ -36,8 +36,6 @@ conda create -n reneo -c conda-forge -c anaconda -c bioconda reneo
 conda activate reneo
 ```
 
-The MFD solver dependencies are included with the environment.
-
 ### Option 2: Installing Reneo using pip
 
 You can install Reneo from PyPI at [https://pypi.org/project/reneo/](https://pypi.org/project/reneo/). Make sure you have [`pip`](https://pip.pypa.io/en/stable/) and [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) installed.
@@ -95,7 +93,18 @@ Reneo is still under testing. Please report any issues and suggestions under [Re
 
 ## Acknowledgement
 
-Reneo uses [flowpaths](https://github.com/algbio/flowpaths) for minimum flow decomposition and code snippets from [Phables](https://github.com/Vini2/phables/).
+Reneo uses the following software and we thank their developers.
+ - [minimap2](https://github.com/lh3/minimap2) and [samtools](https://www.htslib.org/) for read mapping
+ - [koverage](https://github.com/beardymcjohnface/Koverage) using [coverm](https://github.com/wwood/CoverM) for coverage calculations
+ - [prodigal](https://github.com/hyattpd/prodigal) for gene prediction
+ - [hmmer](http://hmmer.org/) for searching sequence databases
+ - [vogdb](https://vogdb.org/) containing viral genes
+ - [agtools](https://github.com/Vini2/agtools) for parsing GFA files
+ - [networkx](https://networkx.org/en/) and [igraph](https://igraph.org/python/) for graph operations
+ - [biopython](https://biopython.org/) for sequence handling
+ - [flowpaths](https://github.com/algbio/flowpaths) for minimum flow decomposition
+ - code snippets from [Phables](https://github.com/Vini2/phables/)
+
 The Reneo logo was designed by [Laura Inglis](https://fame.flinders.edu.au/people/2021/01/01/laura-inglis).
 
 
