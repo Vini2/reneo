@@ -17,7 +17,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 __author__ = "Vijini Mallawaarachchi"
-__copyright__ = "Copyright 2023, Reneo Project"
+__copyright__ = "Copyright 2026, Reneo Project"
 __license__ = "MIT"
 __type__ = "Support Script"
 __maintainer__ = "Vijini Mallawaarachchi"

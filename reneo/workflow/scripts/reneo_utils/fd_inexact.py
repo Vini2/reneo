@@ -9,7 +9,7 @@ import flowpaths as fp
 import networkx as nx
 
 __author__ = "Vijini Mallawaarachchi"
-__copyright__ = "Copyright 2023"
+__copyright__ = "Copyright 2026"
 __license__ = "MIT"
 __version__ = "0.5.0"
 __maintainer__ = "Vijini Mallawaarachchi"

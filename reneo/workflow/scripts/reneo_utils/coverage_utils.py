@@ -10,7 +10,7 @@ from collections import defaultdict
 import pysam
 
 __author__ = "Vijini Mallawaarachchi"
-__copyright__ = "Copyright 2023, Reneo Project"
+__copyright__ = "Copyright 2026, Reneo Project"
 __license__ = "MIT"
 __version__ = "0.6.0"
 __maintainer__ = "Vijini Mallawaarachchi"
