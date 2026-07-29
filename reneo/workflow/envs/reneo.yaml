@@ -14,6 +14,7 @@ dependencies:
   - pandas
   - tqdm
   - click
+  - agtools
   - pip
   - pip:
       - metasnek>=0.0.3

@@ -5,7 +5,7 @@ import logging
 from collections import defaultdict
 
 from Bio import SeqIO
-from Bio.Seq import Seq
+from agtools.core.unitig_graph import UnitigGraph
 from igraph import *
 
 __author__ = "Vijini Mallawaarachchi"
@@ -69,100 +69,39 @@ def get_unitig_lengths(edge_file):
     return unitig_lengths
 
 
-def get_links(assembly_graph_file):
+def get_name_based_links(unitig_graph, contig_names):
     """
-    Get links from the assembly graph
+    Return oriented links and overlaps keyed by segment names.
     """
 
-    node_count = 0
-    graph_contigs = {}
-    edges_lengths = {}
     oriented_links = defaultdict(lambda: defaultdict(list))
     link_overlap = defaultdict(int)
-    links = []
 
-    my_map = BidirectionalMap()
+    for from_segment_id, linked_segments in unitig_graph.oriented_links.items():
+        from_segment_name = contig_names[from_segment_id]
+        for to_segment_id, orientations in linked_segments.items():
+            to_segment_name = contig_names[to_segment_id]
+            for from_orientation, to_orientation in sorted(orientations):
+                oriented_links[from_segment_name][to_segment_name].append(
+                    (from_orientation, to_orientation)
+                )
 
-    # Get links from .gfa file
-    with open(assembly_graph_file) as file:
-        for line in file.readlines():
-            # Identify lines with link information
-            if line.startswith("L"):
-                strings = line.split("\t")
+    for (
+        from_segment_id,
+        from_orientation,
+        to_segment_id,
+        to_orientation,
+    ), overlap in unitig_graph.link_overlap.items():
+        from_segment_name = contig_names[from_segment_id]
+        to_segment_name = contig_names[to_segment_id]
+        link_overlap[
+            (
+                f"{from_segment_name}{from_orientation}",
+                f"{to_segment_name}{to_orientation}",
+            )
+        ] = overlap
 
-                link1 = strings[1]
-                link2 = strings[3]
-
-                link1_orientation = strings[2]
-                link2_orientation = strings[4]
-                overlap = int(strings[5].strip()[:-1])
-
-                link = []
-                link.append(link1)
-                link.append(link2)
-                links.append(link)
-
-                if link1 != link2:
-                    if link1_orientation == "+" and link2_orientation == "+":
-                        oriented_links[link1][link2].append(("+", "+"))
-                        link_overlap[(f"{link1}+", f"{link2}+")] = overlap
-                        oriented_links[link2][link1].append(("-", "-"))
-                        link_overlap[(f"{link2}-", f"{link1}-")] = overlap
-                    elif link1_orientation == "-" and link2_orientation == "-":
-                        oriented_links[link1][link2].append(("-", "-"))
-                        link_overlap[(f"{link1}-", f"{link2}-")] = overlap
-                        oriented_links[link2][link1].append(("+", "+"))
-                        link_overlap[(f"{link2}+", f"{link1}+")] = overlap
-                    elif link1_orientation == "+" and link2_orientation == "-":
-                        oriented_links[link1][link2].append(("+", "-"))
-                        link_overlap[(f"{link1}+", f"{link2}-")] = overlap
-                        oriented_links[link2][link1].append(("+", "-"))
-                        link_overlap[(f"{link2}+", f"{link1}-")] = overlap
-                    elif link1_orientation == "-" and link2_orientation == "+":
-                        oriented_links[link1][link2].append(("-", "+"))
-                        link_overlap[(f"{link1}-", f"{link2}+")] = overlap
-                        oriented_links[link2][link1].append(("-", "+"))
-                        link_overlap[(f"{link2}-", f"{link1}+")] = overlap
-
-            elif line.startswith("S"):
-                strings = line.strip().split()
-                my_map[node_count] = strings[1]
-                graph_contigs[strings[1]] = Seq(strings[2])
-                edges_lengths[strings[1]] = len(strings[2])
-                node_count += 1
-
-            line = file.readline()
-
-    return (
-        node_count,
-        graph_contigs,
-        links,
-        oriented_links,
-        link_overlap,
-        my_map,
-        edges_lengths,
-    )
-
-
-def get_graph_edges(links, contig_names_rev):
-    """
-    Returns the edges of the assembly graph
-    """
-
-    self_looped_nodes = []
-
-    edge_list = []
-
-    # Iterate links
-    for link in links:
-        # Remove self loops
-        if link[0] != link[1]:
-            # Add edge to list of edges
-            edge_list.append((contig_names_rev[link[0]], contig_names_rev[link[1]]))
-        else:
-            self_looped_nodes.append(link[0])
-
-    return edge_list, self_looped_nodes
+    return oriented_links, link_overlap
 
 
 def build_assembly_graph(assembly_graph_file):
@@ -170,40 +109,30 @@ def build_assembly_graph(assembly_graph_file):
     Build the assembly graph
     """
 
-    (
-        node_count,
-        graph_contigs,
-        links,
-        oriented_links,
-        link_overlap,
-        contig_names,
-        edges_lengths,
-    ) = get_links(assembly_graph_file)
+    unitig_graph = UnitigGraph.from_gfa(assembly_graph_file)
+
+    contig_names = BidirectionalMap()
+    for segment_id, segment_name in enumerate(unitig_graph.segment_names):
+        contig_names[segment_id] = segment_name
 
     # Get reverse mapping of contig identifiers
     contig_names_rev = contig_names.inverse
 
-    # Create graph
-    assembly_graph = Graph(directed=False)
-
-    # Add vertices
-    assembly_graph.add_vertices(node_count)
-
-    # Name vertices with contig identifiers
-    for i in range(node_count):
+    assembly_graph = unitig_graph.graph.copy()
+    for i in range(unitig_graph.vcount):
         assembly_graph.vs[i]["id"] = i
         assembly_graph.vs[i]["name"] = contig_names[i]
         assembly_graph.vs[i]["label"] = contig_names[i] + "\nID:" + str(i)
 
-    edge_list, self_looped_nodes = get_graph_edges(
-        links=links, contig_names_rev=contig_names_rev
-    )
-
-    # Add edges to the graph
-    assembly_graph.add_edges(edge_list)
-
-    # Simplify the graph
-    assembly_graph.simplify(multiple=True, loops=False, combine_edges=None)
+    oriented_links, link_overlap = get_name_based_links(unitig_graph, contig_names)
+    graph_contigs = {
+        segment_name: unitig_graph.get_segment_sequence(segment_name)
+        for segment_name in unitig_graph.segment_names
+    }
+    self_looped_nodes = [
+        contig_names[segment_id] for segment_id in unitig_graph.self_loops
+    ]
+    edges_lengths = dict(unitig_graph.segment_lengths)
 
     return (
         assembly_graph,
