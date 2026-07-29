@@ -44,9 +44,6 @@ You can install Reneo from PyPI at [https://pypi.org/project/reneo/](https://pyp
 pip install reneo
 ```
 
-The MFD solver dependencies are installed automatically.
-
-
 ## Quick Start Guide
 
 ### Setting up databases
