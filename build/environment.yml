@@ -4,7 +4,7 @@ channels:
   - anaconda
   - bioconda
 dependencies:
-  - python>=3.9
+  - python>=3.10
   - snakemake>=7.14.0,<8
   - pulp>=2.7,<2.8
   - pyyaml>=6.0
