@@ -160,7 +160,7 @@ def test_add_inferred_oriented_link_adds_primary_reverse_and_graph_edge(graph_au
     assert assembly_graph.edges == {(1, 2)}
 
 
-def test_add_silent_isolated_linear_unitigs_adds_no_support_candidates(
+def test_add_complete_isolated_linear_unitigs_adds_no_support_candidates(
     monkeypatch, graph_augmentation_utils
 ):
     monkeypatch.setattr(
@@ -171,7 +171,7 @@ def test_add_silent_isolated_linear_unitigs_adds_no_support_candidates(
     pruned_vs = {}
     comp_vogs = {}
 
-    count = graph_augmentation_utils.add_silent_isolated_linear_unitigs(
+    count = graph_augmentation_utils.add_complete_isolated_linear_unitigs(
         assembly_graph=AssemblyGraph(components=[[0]]),
         unitig_names={0: "edge_1"},
         unitig_names_rev={"edge_1": 0},

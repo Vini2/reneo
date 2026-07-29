@@ -207,7 +207,7 @@ def is_viral_singleton_candidate(unitig_name, **kwargs):
     return True
 
 
-def add_silent_isolated_linear_unitigs(**kwargs):
+def add_complete_isolated_linear_unitigs(**kwargs):
     """
     Add isolated linear viral unitigs with no external end-linking evidence.
     """
@@ -229,9 +229,9 @@ def add_silent_isolated_linear_unitigs(**kwargs):
     )
 
     if len(candidate_unitigs) == 0:
-        kwargs.setdefault("silent_isolated_unitigs", {}).clear()
+        kwargs.setdefault("complete_isolated_linear_unitigs", {}).clear()
         kwargs["logger"].info(
-            "Added 0 isolated linear unitigs with no external end-linking evidence as case1 candidates"
+            "Added 0 complete isolated linear unitigs with no external end-linking evidence as case1 candidates"
         )
         return 0
 
@@ -240,8 +240,8 @@ def add_silent_isolated_linear_unitigs(**kwargs):
     )
 
     next_component_id = max(kwargs["pruned_vs"].keys(), default=-1) + 1
-    silent_unitigs = kwargs.setdefault("silent_isolated_unitigs", {})
-    silent_unitigs.clear()
+    complete_unitigs = kwargs.setdefault("complete_isolated_linear_unitigs", {})
+    complete_unitigs.clear()
 
     for unitig in candidate_unitigs:
         plus_support = endpoint_support.get(f"{unitig}+", 0)
@@ -255,18 +255,18 @@ def add_silent_isolated_linear_unitigs(**kwargs):
         vertex_id = kwargs["unitig_names_rev"][unitig]
         kwargs["pruned_vs"][component_id] = [vertex_id]
         kwargs["comp_vogs"][component_id] = kwargs["unitig_vogs"].get(unitig, set())
-        silent_unitigs[unitig] = {
+        complete_unitigs[unitig] = {
             "component_id": component_id,
             "plus_external_support": plus_support,
             "minus_external_support": minus_support,
         }
 
-    kwargs["silent_isolated_unitigs"] = silent_unitigs
+    kwargs["complete_isolated_linear_unitigs"] = complete_unitigs
     kwargs["logger"].info(
-        f"Added {len(silent_unitigs)} isolated linear unitigs with no external end-linking evidence as case1 candidates"
+        f"Added {len(complete_unitigs)} complete isolated linear unitigs with no external end-linking evidence as case1 candidates"
     )
 
-    return len(silent_unitigs)
+    return len(complete_unitigs)
 
 
 def add_inferred_oriented_link(left, right, support, **kwargs):

@@ -15,7 +15,7 @@ from igraph import *
 from reneo_utils import component_utils, edge_graph_utils, flow_utils, gene_utils
 from reneo_utils.coverage_utils import get_unitig_coverage
 from reneo_utils.graph_augmentation_utils import (
-    add_silent_isolated_linear_unitigs,
+    add_complete_isolated_linear_unitigs,
     augment_case3_linear_components,
 )
 from reneo_utils.genome_utils import GenomeComponent, GenomePath
@@ -1797,7 +1797,7 @@ def main(**kwargs):
     # Augment incomplete case 3 linear components using strand-aware PE evidence
     # ----------------------------------------------------------------------
     kwargs["inferred_case3_links"] = {}
-    kwargs["silent_isolated_unitigs"] = {}
+    kwargs["complete_isolated_linear_unitigs"] = {}
     links_added = augment_case3_linear_components(**kwargs)
 
     if links_added > 0:
@@ -1808,7 +1808,7 @@ def main(**kwargs):
             f"Total number of components found after graph augmentation: {len(kwargs['pruned_vs'])}"
         )
 
-    add_silent_isolated_linear_unitigs(**kwargs)
+    add_complete_isolated_linear_unitigs(**kwargs)
 
     kwargs["augmented_gfa"] = write_augmented_gfa(**kwargs)
     kwargs["augmented_summary"] = write_augmented_summary(**kwargs)
