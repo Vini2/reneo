@@ -1,4 +1,12 @@
-include reneo/reneo.LICENSE
+include LICENSE
+include README.md
 include reneo/reneo.CITATION
+include reneo/reneo.LICENSE
 include reneo/reneo.VERSION
-recursive-include reneo *
+recursive-include reneo/config *.yaml
+recursive-include reneo/test_data *.gfa *.hmm *.fastq.gz
+recursive-include reneo/workflow *.smk *.yaml *.py
+prune reneo/__pycache__
+prune reneo/workflow/scripts/__pycache__
+prune reneo/workflow/scripts/reneo_utils/__pycache__
+global-exclude .DS_Store *.py[cod]

@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reneo"
+dynamic = ["version"]
+description = "Unraveling Viral Genomes from Metagenomes"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Vijini Mallawaarachchi", email = "viji.mallawaarachchi@gmail.com" },
+]
+dependencies = [
+    "snakemake>=7.14.0,<8",
+    "pulp>=2.7,<2.8",
+    "pyyaml>=6.0",
+    "click>=8.1.3",
+    "metasnek>=0.0.5",
+    "snaketool-utils>=0.0.4",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/Vini2/reneo"
+
+[project.scripts]
+reneo = "reneo.__main__:main"
+
+[tool.setuptools]
+packages = { find = { include = ["reneo*"] } }
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = { file = ["reneo/reneo.VERSION"] }
+
+[tool.setuptools.package-data]
+reneo = [
+    "reneo.CITATION",
+    "reneo.LICENSE",
+    "reneo.VERSION",
+    "config/*.yaml",
+    "test_data/*.gfa",
+    "test_data/*.hmm",
+    "test_data/reads/*.fastq.gz",
+    "workflow/*.smk",
+    "workflow/envs/*.yaml",
+    "workflow/rules/*.smk",
+    "workflow/scripts/*.py",
+    "workflow/scripts/reneo_utils/*.py",
+]
+
+[tool.setuptools.exclude-package-data]
+reneo = [
+    "**/.DS_Store",
+    "**/__pycache__/*",
+    "**/*.pyc",
+]
