@@ -1273,7 +1273,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 )
                                 v_succ_cov = kwargs["unitig_coverages"][v_succ[:-1]]
                                 v_cov = kwargs["unitig_coverages"][v[:-1]]
-                                u_cov = kwargs["unitig_coverages"][v[:-1]]
+                                u_cov = kwargs["unitig_coverages"][u[:-1]]
 
                                 if (
                                     [u, v, v_succ] not in junctions_visited
