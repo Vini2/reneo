@@ -145,6 +145,24 @@ def get_isolated_linear_unitigs(**kwargs):
     return isolated
 
 
+def get_pruned_isolated_linear_unitig_components(**kwargs):
+    """
+    Find single-contig linear components already selected in pruned_vs.
+    """
+
+    isolated = {}
+
+    for component_id, candidate_nodes in kwargs["pruned_vs"].items():
+        if len(candidate_nodes) != 1:
+            continue
+
+        unitig_name = kwargs["unitig_names"][candidate_nodes[0]]
+        if unitig_name not in kwargs["self_looped_nodes"]:
+            isolated[unitig_name] = component_id
+
+    return isolated
+
+
 def filter_isolated_unitigs_by_junction_support(
     isolated_unitigs, terminal_unitigs, **kwargs
 ):
@@ -212,7 +230,7 @@ def add_complete_isolated_linear_unitigs(**kwargs):
     Add isolated linear viral unitigs with no external end-linking evidence.
     """
 
-    isolated_unitigs = get_isolated_linear_unitigs(**kwargs)
+    isolated_unitig_components = get_pruned_isolated_linear_unitig_components(**kwargs)
     augmented_unitigs = set()
 
     for left, right in kwargs.get("inferred_case3_links", {}):
@@ -222,7 +240,7 @@ def add_complete_isolated_linear_unitigs(**kwargs):
     candidate_unitigs = sorted(
         [
             unitig
-            for unitig in isolated_unitigs
+            for unitig in isolated_unitig_components
             if unitig not in augmented_unitigs
             and is_viral_singleton_candidate(unitig, **kwargs)
         ]
@@ -231,7 +249,7 @@ def add_complete_isolated_linear_unitigs(**kwargs):
     if len(candidate_unitigs) == 0:
         kwargs.setdefault("complete_isolated_linear_unitigs", {}).clear()
         kwargs["logger"].info(
-            "Added 0 complete isolated linear unitigs with no external end-linking evidence as case1 candidates"
+            "Marked 0 complete isolated linear unitigs with no external end-linking evidence as case1 candidates"
         )
         return 0
 
@@ -239,7 +257,6 @@ def add_complete_isolated_linear_unitigs(**kwargs):
         kwargs["bampath"], kwargs["output"], candidate_unitigs, kwargs["nthreads"]
     )
 
-    next_component_id = max(kwargs["pruned_vs"].keys(), default=-1) + 1
     complete_unitigs = kwargs.setdefault("complete_isolated_linear_unitigs", {})
     complete_unitigs.clear()
 
@@ -250,11 +267,12 @@ def add_complete_isolated_linear_unitigs(**kwargs):
         if plus_support + minus_support != 0:
             continue
 
-        component_id = next_component_id
-        next_component_id += 1
+        component_id = isolated_unitig_components[unitig]
         vertex_id = kwargs["unitig_names_rev"][unitig]
-        kwargs["pruned_vs"][component_id] = [vertex_id]
-        kwargs["comp_vogs"][component_id] = kwargs["unitig_vogs"].get(unitig, set())
+        kwargs["pruned_vs"].setdefault(component_id, [vertex_id])
+        kwargs["comp_vogs"].setdefault(
+            component_id, kwargs["unitig_vogs"].get(unitig, set())
+        )
         complete_unitigs[unitig] = {
             "component_id": component_id,
             "plus_external_support": plus_support,
@@ -263,7 +281,7 @@ def add_complete_isolated_linear_unitigs(**kwargs):
 
     kwargs["complete_isolated_linear_unitigs"] = complete_unitigs
     kwargs["logger"].info(
-        f"Added {len(complete_unitigs)} complete isolated linear unitigs with no external end-linking evidence as case1 candidates"
+        f"Marked {len(complete_unitigs)} complete isolated linear unitigs with no external end-linking evidence as case1 candidates"
     )
 
     return len(complete_unitigs)
