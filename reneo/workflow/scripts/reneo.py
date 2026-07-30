@@ -546,7 +546,6 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 source_sink_candidates = flow_utils.get_source_sink_circular(
                     G_edge,
                     kwargs["graph_unitigs"],
-                    kwargs["minlength"],
                     kwargs["self_looped_nodes"],
                 )
 
@@ -1011,7 +1010,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 # ----------------------------------------------------------------------
 
                 source_candidates, sink_candidates = flow_utils.get_source_sink_linear(
-                    G_edge, kwargs["self_looped_nodes"]
+                    G_edge,
+                    kwargs["graph_unitigs"],
+                    kwargs["self_looped_nodes"],
                 )
 
                 kwargs["logger"].debug(f"Original candidate_nodes: {candidate_nodes}")

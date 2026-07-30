@@ -14,7 +14,10 @@ __email__ = "viji.mallawaarachchi@gmail.com"
 __status__ = "Development"
 
 
-def get_source_sink_circular(G_edge, graph_unitigs, minlength, self_looped_nodes):
+SOURCE_SINK_MINLENGTH = 1000
+
+
+def get_source_sink_circular(G_edge, graph_unitigs, self_looped_nodes):
     """
     Identify source/sink vertex for circular components
     """
@@ -26,7 +29,7 @@ def get_source_sink_circular(G_edge, graph_unitigs, minlength, self_looped_nodes
 
         if (
             unitig_name not in self_looped_nodes
-            and len(graph_unitigs[unitig_name]) > minlength
+            and len(graph_unitigs[unitig_name]) > SOURCE_SINK_MINLENGTH
         ):
             # Get BFS layers
             bfs_layers = dict(enumerate(nx.bfs_layers(G_edge, node)))
@@ -59,7 +62,7 @@ def get_source_sink_circular(G_edge, graph_unitigs, minlength, self_looped_nodes
     return source_sink_candidates
 
 
-def get_source_sink_linear(G_edge, self_looped_nodes):
+def get_source_sink_linear(G_edge, graph_unitigs, self_looped_nodes):
     """
     Identify source/sink vertex for linear components
     """
@@ -70,7 +73,10 @@ def get_source_sink_linear(G_edge, self_looped_nodes):
     for node in list(G_edge.nodes):
         unitig_name = node[:-1]
 
-        if unitig_name not in self_looped_nodes:
+        if (
+            unitig_name not in self_looped_nodes
+            and len(graph_unitigs[unitig_name]) > SOURCE_SINK_MINLENGTH
+        ):
             indegree = len([x for x in G_edge.predecessors(node)])
             outdegree = len([x for x in G_edge.successors(node)])
             if indegree > 0 and outdegree == 0:

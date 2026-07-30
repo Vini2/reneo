@@ -101,7 +101,9 @@ def get_case3_linear_terminals(**kwargs):
             pass
 
         source_candidates, sink_candidates = flow_utils.get_source_sink_linear(
-            G_edge, kwargs["self_looped_nodes"]
+            G_edge,
+            kwargs["graph_unitigs"],
+            kwargs["self_looped_nodes"],
         )
 
         if len(source_candidates) == 0 or len(sink_candidates) == 0:
@@ -315,14 +317,20 @@ def get_unextended_case3_linear_component_terminals(**kwargs):
             pass
 
         source_candidates, sink_candidates = flow_utils.get_source_sink_linear(
-            G_edge, kwargs["self_looped_nodes"]
+            G_edge,
+            kwargs["graph_unitigs"],
+            kwargs["self_looped_nodes"],
         )
 
         terminals = source_candidates + sink_candidates
         if len(terminals) == 0:
             continue
 
-        component_terminals[component_id] = terminals
+        component_terminals[component_id] = {
+            "sources": source_candidates,
+            "sinks": sink_candidates,
+            "terminals": terminals,
+        }
         for unitig in component_unitigs:
             contig_component_ids[unitig] = component_id
         for terminal in terminals:
@@ -331,9 +339,71 @@ def get_unextended_case3_linear_component_terminals(**kwargs):
     return component_terminals, terminal_unitigs, contig_component_ids
 
 
+def get_unextended_case3_linear_closure_support(component_terminals, **kwargs):
+    """
+    Count strand-aware PE and spanning-read evidence from sinks back to sources.
+    """
+
+    target_pairs = set()
+    pair_components = {}
+
+    for component_id, terminal_roles in component_terminals.items():
+        for sink in terminal_roles["sinks"]:
+            for source in terminal_roles["sources"]:
+                sink_unitig = sink[:-1]
+                source_unitig = source[:-1]
+
+                if sink_unitig == source_unitig:
+                    continue
+
+                target_pair = tuple(sorted([sink_unitig, source_unitig]))
+                target_pairs.add(target_pair)
+                pair_components[(sink, source)] = component_id
+
+    if len(target_pairs) == 0:
+        return {}
+
+    oriented_junction_pe_coverage = get_oriented_junction_pe_coverage_for_pairs(
+        kwargs["bampath"],
+        kwargs["output"],
+        target_pairs,
+        kwargs["nthreads"],
+    )
+    oriented_spanning_read_coverage = get_oriented_spanning_read_coverage_for_pairs(
+        kwargs["bampath"],
+        kwargs["output"],
+        target_pairs,
+        kwargs["nthreads"],
+    )
+
+    closure_support = {}
+    for link, component_id in pair_components.items():
+        support = (
+            oriented_junction_pe_coverage.get(link, 0)
+            + oriented_spanning_read_coverage.get(link, 0)
+        )
+        if support < JUNCTION_PE_THRESHOLD:
+            continue
+
+        if (
+            component_id not in closure_support
+            or support > closure_support[component_id]["support"]
+        ):
+            closure_support[component_id] = {
+                "link": link,
+                "support": support,
+                "junction_pe_support": oriented_junction_pe_coverage.get(link, 0),
+                "spanning_support": oriented_spanning_read_coverage.get(link, 0),
+            }
+
+    return closure_support
+
+
 def filter_unextended_case3_linear_components_by_endpoint_support(**kwargs):
     """
-    Remove unextended case 3 linear components unless all terminal ends lack external evidence.
+    Remove unextended case 3 linear components unless all terminal ends lack
+    external evidence, or sink-to-source read evidence suggests missed
+    circularization.
     """
 
     (
@@ -355,17 +425,29 @@ def filter_unextended_case3_linear_components_by_endpoint_support(**kwargs):
         contig_component_ids,
         kwargs["nthreads"],
     )
+    closure_support = get_unextended_case3_linear_closure_support(
+        component_terminals, **kwargs
+    )
 
     removed_components = []
     complete_components = {}
+    circularized_components = {}
 
-    for component_id, terminals in component_terminals.items():
+    for component_id, terminal_roles in component_terminals.items():
         terminal_support = {
-            terminal: endpoint_support.get(terminal, 0) for terminal in terminals
+            terminal: endpoint_support.get(terminal, 0)
+            for terminal in terminal_roles["terminals"]
         }
 
         if sum(terminal_support.values()) == 0:
             complete_components[component_id] = terminal_support
+            continue
+
+        if component_id in closure_support:
+            circularized_components[component_id] = {
+                "terminal_support": terminal_support,
+                "closure_support": closure_support[component_id],
+            }
             continue
 
         removed_components.append(component_id)
@@ -375,8 +457,14 @@ def filter_unextended_case3_linear_components_by_endpoint_support(**kwargs):
         kwargs["comp_vogs"].pop(component_id, None)
 
     kwargs["complete_unextended_case3_linear_components"] = complete_components
+    kwargs[
+        "circularized_unextended_case3_linear_components"
+    ] = circularized_components
     kwargs["logger"].info(
         f"Kept {len(complete_components)} unextended case 3 linear components with zero external end-linking evidence"
+    )
+    kwargs["logger"].info(
+        f"Kept {len(circularized_components)} unextended case 3 linear components with sink-to-source read evidence suggesting missed circularization"
     )
     kwargs["logger"].info(
         f"Filtered {len(removed_components)} unextended case 3 linear components with external end-linking evidence"
