@@ -17,6 +17,7 @@ from reneo_utils.coverage_utils import get_unitig_coverage
 from reneo_utils.graph_augmentation_utils import (
     add_complete_isolated_linear_unitigs,
     augment_case3_linear_components,
+    filter_unextended_case3_linear_components_by_endpoint_support,
 )
 from reneo_utils.genome_utils import GenomeComponent, GenomePath
 from reneo_utils.output_utils import (
@@ -1798,16 +1799,13 @@ def main(**kwargs):
     # ----------------------------------------------------------------------
     kwargs["inferred_case3_links"] = {}
     kwargs["complete_isolated_linear_unitigs"] = {}
-    links_added = augment_case3_linear_components(**kwargs)
+    (
+        links_added,
+        kwargs["pruned_vs"],
+        kwargs["comp_vogs"],
+    ) = augment_case3_linear_components(**kwargs)
 
-    if links_added > 0:
-        kwargs["pruned_vs"], kwargs["comp_vogs"] = component_utils.get_components(
-            **kwargs
-        )
-        kwargs["logger"].info(
-            f"Total number of components found after graph augmentation: {len(kwargs['pruned_vs'])}"
-        )
-
+    filter_unextended_case3_linear_components_by_endpoint_support(**kwargs)
     add_complete_isolated_linear_unitigs(**kwargs)
 
     kwargs["augmented_gfa"] = write_augmented_gfa(**kwargs)

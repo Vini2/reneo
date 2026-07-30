@@ -3,6 +3,7 @@
 import networkx as nx
 from reneo_utils import component_utils, flow_utils
 from reneo_utils.coverage_utils import (
+    get_component_external_endpoint_read_support,
     get_opposite_orientation,
     get_oriented_external_endpoint_read_support,
     get_oriented_junction_pe_coverage_for_pairs,
@@ -269,6 +270,121 @@ def add_complete_isolated_linear_unitigs(**kwargs):
     return len(complete_unitigs)
 
 
+def get_augmented_unitigs(**kwargs):
+    augmented_unitigs = set()
+
+    for left, right in kwargs.get("inferred_case3_links", {}):
+        augmented_unitigs.add(left[:-1])
+        augmented_unitigs.add(right[:-1])
+
+    return augmented_unitigs
+
+
+def get_unextended_case3_linear_component_terminals(**kwargs):
+    """
+    Find source/sink terminals for case 3 linear components not touched by augmentation.
+    """
+
+    augmented_unitigs = get_augmented_unitigs(**kwargs)
+    component_terminals = {}
+    contig_component_ids = {}
+    terminal_unitigs = set()
+
+    for component_id, candidate_nodes in kwargs["pruned_vs"].items():
+        if not (
+            len(candidate_nodes) > 2
+            and len(candidate_nodes) <= kwargs["compcount"]
+        ):
+            continue
+
+        component_unitigs = set(
+            kwargs["unitig_names"][node] for node in candidate_nodes
+        )
+        if len(component_unitigs.intersection(augmented_unitigs)) > 0:
+            continue
+
+        G_edge = build_oriented_component_graph(candidate_nodes, **kwargs)
+
+        if len(G_edge.nodes) == 0:
+            continue
+
+        try:
+            nx.find_cycle(G_edge, orientation="original")
+            continue
+        except nx.exception.NetworkXNoCycle:
+            pass
+
+        source_candidates, sink_candidates = flow_utils.get_source_sink_linear(
+            G_edge, kwargs["self_looped_nodes"]
+        )
+
+        terminals = source_candidates + sink_candidates
+        if len(terminals) == 0:
+            continue
+
+        component_terminals[component_id] = terminals
+        for unitig in component_unitigs:
+            contig_component_ids[unitig] = component_id
+        for terminal in terminals:
+            terminal_unitigs.add(terminal[:-1])
+
+    return component_terminals, terminal_unitigs, contig_component_ids
+
+
+def filter_unextended_case3_linear_components_by_endpoint_support(**kwargs):
+    """
+    Remove unextended case 3 linear components unless all terminal ends lack external evidence.
+    """
+
+    (
+        component_terminals,
+        terminal_unitigs,
+        contig_component_ids,
+    ) = get_unextended_case3_linear_component_terminals(**kwargs)
+
+    if len(component_terminals) == 0:
+        kwargs["logger"].info(
+            "Filtered 0 unextended case 3 linear components with external end-linking evidence"
+        )
+        return 0
+
+    endpoint_support = get_component_external_endpoint_read_support(
+        kwargs["bampath"],
+        kwargs["output"],
+        terminal_unitigs,
+        contig_component_ids,
+        kwargs["nthreads"],
+    )
+
+    removed_components = []
+    complete_components = {}
+
+    for component_id, terminals in component_terminals.items():
+        terminal_support = {
+            terminal: endpoint_support.get(terminal, 0) for terminal in terminals
+        }
+
+        if sum(terminal_support.values()) == 0:
+            complete_components[component_id] = terminal_support
+            continue
+
+        removed_components.append(component_id)
+
+    for component_id in removed_components:
+        kwargs["pruned_vs"].pop(component_id, None)
+        kwargs["comp_vogs"].pop(component_id, None)
+
+    kwargs["complete_unextended_case3_linear_components"] = complete_components
+    kwargs["logger"].info(
+        f"Kept {len(complete_components)} unextended case 3 linear components with zero external end-linking evidence"
+    )
+    kwargs["logger"].info(
+        f"Filtered {len(removed_components)} unextended case 3 linear components with external end-linking evidence"
+    )
+
+    return len(removed_components)
+
+
 def add_inferred_oriented_link(left, right, support, **kwargs):
     """
     Add an inferred, zero-overlap oriented link and its reverse complement.
@@ -488,4 +604,4 @@ def augment_case3_linear_components(**kwargs):
         f"Added {total_links_added} inferred case 3 graph extension links across {round_id - 1} augmentation rounds using junction_pe_threshold={JUNCTION_PE_THRESHOLD}"
     )
 
-    return total_links_added
+    return total_links_added, kwargs["pruned_vs"], kwargs["comp_vogs"]
