@@ -65,7 +65,7 @@ def test_reneo_script_smoke_with_mock_intermediates(tmp_path, monkeypatch):
             hmmscore=50,
             nvogs=10,
             covtol=100,
-            alpha=1.1,
+            alpha=1.2,
             output=str(output_dir),
         ),
         threads=1,
@@ -99,7 +99,7 @@ def test_reneo_script_smoke_with_mock_intermediates(tmp_path, monkeypatch):
     assert "Minimum coverage of paths to output: 50" in log_text
     assert "Coverage tolerance for extending subpaths: 100.0" in log_text
     assert "Minimum length of unitigs to consider: 5000" in log_text
-    assert "Coverage multipler for flow interval modelling: 1.1" in log_text
+    assert "Coverage multipler for flow interval modelling: 1.2" in log_text
 
     expected_paths = read_resolved_genome_paths(data_dir / "resolved_genome_info.txt")
     observed_paths = read_resolved_genome_paths(output_dir / "resolved_genome_info.txt")
