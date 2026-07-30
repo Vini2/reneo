@@ -44,6 +44,9 @@ def graph_augmentation_utils(monkeypatch):
     fake_coverage.get_oriented_external_endpoint_read_support = (
         lambda *args, **kwargs: defaultdict(int)
     )
+    fake_coverage.get_component_external_endpoint_read_support = (
+        lambda *args, **kwargs: defaultdict(int)
+    )
     fake_coverage.get_oriented_junction_pe_coverage_for_pairs = (
         lambda *args, **kwargs: defaultdict(int)
     )
@@ -53,6 +56,20 @@ def graph_augmentation_utils(monkeypatch):
     fake_component = types.ModuleType("reneo_utils.component_utils")
     fake_component.get_components = lambda **kwargs: (kwargs["pruned_vs"], kwargs["comp_vogs"])
     fake_flow = types.ModuleType("reneo_utils.flow_utils")
+    fake_flow.get_source_sink_linear = lambda graph, self_looped_nodes: (
+        [
+            node
+            for node in graph.nodes
+            if len(list(graph.predecessors(node))) == 0
+            and len(list(graph.successors(node))) > 0
+        ],
+        [
+            node
+            for node in graph.nodes
+            if len(list(graph.predecessors(node))) > 0
+            and len(list(graph.successors(node))) == 0
+        ],
+    )
 
     monkeypatch.setitem(sys.modules, "networkx", FakeNetworkX("networkx"))
     monkeypatch.setitem(sys.modules, "reneo_utils.coverage_utils", fake_coverage)
@@ -193,3 +210,58 @@ def test_add_complete_isolated_linear_unitigs_adds_no_support_candidates(
     assert count == 1
     assert pruned_vs == {0: [0]}
     assert comp_vogs == {0: {"VOG1"}}
+
+
+def test_filter_unextended_case3_linear_components_by_endpoint_support(
+    monkeypatch, graph_augmentation_utils
+):
+    endpoint_support = {"edge_1+": 3, "edge_6+": 0}
+    monkeypatch.setattr(
+        graph_augmentation_utils,
+        "get_component_external_endpoint_read_support",
+        lambda *args, **kwargs: endpoint_support,
+    )
+    pruned_vs = {5: [0, 1, 2], 6: [3, 4, 5]}
+    comp_vogs = {5: {"VOG1"}, 6: {"VOG2"}}
+
+    removed = graph_augmentation_utils.filter_unextended_case3_linear_components_by_endpoint_support(
+        pruned_vs=pruned_vs,
+        comp_vogs=comp_vogs,
+        unitig_names={
+            0: "edge_1",
+            1: "edge_2",
+            2: "edge_3",
+            3: "edge_4",
+            4: "edge_5",
+            5: "edge_6",
+        },
+        unitig_names_rev={
+            "edge_1": 0,
+            "edge_2": 1,
+            "edge_3": 2,
+            "edge_4": 3,
+            "edge_5": 4,
+            "edge_6": 5,
+        },
+        oriented_links={
+            "edge_1": {"edge_2": [("+", "+")]},
+            "edge_2": {"edge_3": [("+", "+")]},
+            "edge_3": {},
+            "edge_4": {"edge_5": [("+", "+")]},
+            "edge_5": {"edge_6": [("+", "+")]},
+            "edge_6": {},
+        },
+        self_looped_nodes=set(),
+        unitig_coverages={},
+        MAX_VAL=999,
+        compcount=200,
+        inferred_case3_links={},
+        bampath=".",
+        output=".",
+        nthreads=1,
+        logger=Logger(),
+    )
+
+    assert removed == 1
+    assert pruned_vs == {6: [3, 4, 5]}
+    assert comp_vogs == {6: {"VOG2"}}
