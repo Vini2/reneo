@@ -47,8 +47,11 @@ def get_components(**kwargs):
                     break
                 elif kwargs["unitig_names"][unitig] in kwargs["unitig_vogs"]:
                     for vog in kwargs["unitig_vogs"][kwargs["unitig_names"][unitig]]:
-                        
-                        if "rna-dependent rna polymerase" in kwargs["vog_dict"][vog].lower():
+
+                        if (
+                            "rna-dependent rna polymerase"
+                            in kwargs["vog_dict"][vog].lower()
+                        ):
                             vog_functions["rdrp"] += 1
                         elif "reverse transcriptase" in kwargs["vog_dict"][vog].lower():
                             vog_functions["reverse_transcriptase"] += 1
@@ -60,13 +63,18 @@ def get_components(**kwargs):
                             vog_functions["major_capsid_protein"] += 1
                         elif "rna polymerase" in kwargs["vog_dict"][vog].lower():
                             vog_functions["rna_polymerase"] += 1
-                        elif "terminase large subunit" in kwargs["vog_dict"][vog].lower():
+                        elif (
+                            "terminase large subunit" in kwargs["vog_dict"][vog].lower()
+                        ):
                             vog_functions["terl"] += 1
                         elif "portal protein" in kwargs["vog_dict"][vog].lower():
                             vog_functions["portal_protein"] += 1
                         elif "tail" in kwargs["vog_dict"][vog].lower():
                             vog_functions["tail"] += 1
-                        elif "replication associated protein" in kwargs["vog_dict"][vog].lower():
+                        elif (
+                            "replication associated protein"
+                            in kwargs["vog_dict"][vog].lower()
+                        ):
                             vog_functions["replication_associated_protein"] += 1
                         elif "helicase" in kwargs["vog_dict"][vog].lower():
                             vog_functions["helicase"] += 1
@@ -76,26 +84,45 @@ def get_components(**kwargs):
                             vog_functions["hypothetical"] += 1
                         else:
                             vog_functions["other_func"] += 1
-                        
+
                         vogs_found.add(vog)
 
             if vog_functions["rdrp"] > 0:
                 vogs_present = True
-            elif vog_functions["reverse_transcriptase"] > 0 and vog_functions["integrase"] > 0:
+            elif (
+                vog_functions["reverse_transcriptase"] > 0
+                and vog_functions["integrase"] > 0
+            ):
                 vogs_present = True
-            elif vog_functions["dna_polymerase"] > 0 and vog_functions["major_capsid_protein"] > 0 and vog_functions["rna_polymerase"] > 0:
+            elif (
+                vog_functions["dna_polymerase"] > 0
+                and vog_functions["major_capsid_protein"] > 0
+                and vog_functions["rna_polymerase"] > 0
+            ):
                 vogs_present = True
-            elif vog_functions["terl"] > 0 and vog_functions["portal_protein"] > 0 and vog_functions["tail"] > 0 and vog_functions["major_capsid_protein"] > 0:
+            elif (
+                vog_functions["terl"] > 0
+                and vog_functions["portal_protein"] > 0
+                and vog_functions["tail"] > 0
+                and vog_functions["major_capsid_protein"] > 0
+            ):
                 vogs_present = True
             elif vog_functions["replication_associated_protein"] > 0:
                 vogs_present = True
-            elif vog_functions["rdrp"] > 0 and vog_functions["helicase"] > 0 and vog_functions["protease"] > 0:
+            elif (
+                vog_functions["rdrp"] > 0
+                and vog_functions["helicase"] > 0
+                and vog_functions["protease"] > 0
+            ):
                 vogs_present = True
-            elif vog_functions["terl"] > 0 and vog_functions["major_capsid_protein"] > 0 and vog_functions["tail"] > 0:
+            elif (
+                vog_functions["terl"] > 0
+                and vog_functions["major_capsid_protein"] > 0
+                and vog_functions["tail"] > 0
+            ):
                 vogs_present = True
             elif vog_functions["other_func"] > 0:
                 vogs_present = True
-            
 
             if vogs_present:
                 pruned_vs[i] = component
@@ -109,7 +136,10 @@ def get_components(**kwargs):
             if kwargs["unitig_names"][unitig] in kwargs["unitig_vogs"]:
                 for vog in kwargs["unitig_vogs"][kwargs["unitig_names"][unitig]]:
 
-                    if "rna-dependent rna polymerase" in kwargs["vog_dict"][vog].lower():
+                    if (
+                        "rna-dependent rna polymerase"
+                        in kwargs["vog_dict"][vog].lower()
+                    ):
                         vog_functions["rdrp"] += 1
                     elif "reverse transcriptase" in kwargs["vog_dict"][vog].lower():
                         vog_functions["reverse_transcriptase"] += 1
@@ -127,7 +157,10 @@ def get_components(**kwargs):
                         vog_functions["portal_protein"] += 1
                     elif "tail" in kwargs["vog_dict"][vog].lower():
                         vog_functions["tail"] += 1
-                    elif "replication associated protein" in kwargs["vog_dict"][vog].lower():
+                    elif (
+                        "replication associated protein"
+                        in kwargs["vog_dict"][vog].lower()
+                    ):
                         vog_functions["replication_associated_protein"] += 1
                     elif "helicase" in kwargs["vog_dict"][vog].lower():
                         vog_functions["helicase"] += 1
@@ -139,20 +172,40 @@ def get_components(**kwargs):
                         vog_functions["other_func"] += 1
 
                     vogs_found.add(vog)
-                    
+
             if vog_functions["rdrp"] > 0:
                 vogs_present = True
-            elif vog_functions["reverse_transcriptase"] > 0 and vog_functions["integrase"] > 0:
+            elif (
+                vog_functions["reverse_transcriptase"] > 0
+                and vog_functions["integrase"] > 0
+            ):
                 vogs_present = True
-            elif vog_functions["dna_polymerase"] > 0 and vog_functions["major_capsid_protein"] > 0 and vog_functions["rna_polymerase"] > 0:
+            elif (
+                vog_functions["dna_polymerase"] > 0
+                and vog_functions["major_capsid_protein"] > 0
+                and vog_functions["rna_polymerase"] > 0
+            ):
                 vogs_present = True
-            elif vog_functions["terl"] > 0 and vog_functions["portal_protein"] > 0 and vog_functions["tail"] > 0 and vog_functions["major_capsid_protein"] > 0:
+            elif (
+                vog_functions["terl"] > 0
+                and vog_functions["portal_protein"] > 0
+                and vog_functions["tail"] > 0
+                and vog_functions["major_capsid_protein"] > 0
+            ):
                 vogs_present = True
             elif vog_functions["replication_associated_protein"] > 0:
                 vogs_present = True
-            elif vog_functions["rdrp"] > 0 and vog_functions["helicase"] > 0 and vog_functions["protease"] > 0:
+            elif (
+                vog_functions["rdrp"] > 0
+                and vog_functions["helicase"] > 0
+                and vog_functions["protease"] > 0
+            ):
                 vogs_present = True
-            elif vog_functions["terl"] > 0 and vog_functions["major_capsid_protein"] > 0 and vog_functions["tail"] > 0:
+            elif (
+                vog_functions["terl"] > 0
+                and vog_functions["major_capsid_protein"] > 0
+                and vog_functions["tail"] > 0
+            ):
                 vogs_present = True
             elif vog_functions["other_func"] > 0:
                 vogs_present = True

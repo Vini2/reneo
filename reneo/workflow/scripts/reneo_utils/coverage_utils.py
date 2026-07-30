@@ -109,7 +109,9 @@ def add_oriented_spanning_read_support(link_counts, left_read, right_read):
     right = f"{right_read.reference_name}{right_orientation}"
     link_counts[(left, right)] += 1
 
-    rc_left = f"{right_read.reference_name}{get_opposite_orientation(right_orientation)}"
+    rc_left = (
+        f"{right_read.reference_name}{get_opposite_orientation(right_orientation)}"
+    )
     rc_right = f"{left_read.reference_name}{get_opposite_orientation(left_orientation)}"
     link_counts[(rc_left, rc_right)] += 1
 
@@ -130,15 +132,13 @@ def add_component_external_endpoint_support(
     left_name = left[:-1]
     right_name = right[:-1]
 
-    if (
-        left_name in target_contigs
-        and contig_component_ids.get(left_name) != contig_component_ids.get(right_name)
-    ):
+    if left_name in target_contigs and contig_component_ids.get(
+        left_name
+    ) != contig_component_ids.get(right_name):
         endpoint_counts[left] += 1
-    if (
-        right_name in target_contigs
-        and contig_component_ids.get(right_name) != contig_component_ids.get(left_name)
-    ):
+    if right_name in target_contigs and contig_component_ids.get(
+        right_name
+    ) != contig_component_ids.get(left_name):
         endpoint_counts[right] += 1
 
 
@@ -191,7 +191,9 @@ def add_endpoint_spanning_read_support(
     right = f"{right_read.reference_name}{right_orientation}"
     add_endpoint_support(endpoint_counts, left, right, target_contigs)
 
-    rc_left = f"{right_read.reference_name}{get_opposite_orientation(right_orientation)}"
+    rc_left = (
+        f"{right_read.reference_name}{get_opposite_orientation(right_orientation)}"
+    )
     rc_right = f"{left_read.reference_name}{get_opposite_orientation(left_orientation)}"
     add_endpoint_support(endpoint_counts, rc_left, rc_right, target_contigs)
 
@@ -208,7 +210,9 @@ def add_component_external_endpoint_spanning_read_support(
         endpoint_counts, left, right, target_contigs, contig_component_ids
     )
 
-    rc_left = f"{right_read.reference_name}{get_opposite_orientation(right_orientation)}"
+    rc_left = (
+        f"{right_read.reference_name}{get_opposite_orientation(right_orientation)}"
+    )
     rc_right = f"{left_read.reference_name}{get_opposite_orientation(left_orientation)}"
     add_component_external_endpoint_support(
         endpoint_counts, rc_left, rc_right, target_contigs, contig_component_ids
@@ -238,9 +242,7 @@ def add_endpoint_sa_tag_support(endpoint_counts, read, target_contigs):
         add_endpoint_support(endpoint_counts, left, right, target_contigs)
 
         rc_left = f"{sa_reference_name}{get_opposite_orientation(sa_orientation)}"
-        rc_right = (
-            f"{read.reference_name}{get_opposite_orientation(get_read_orientation(read))}"
-        )
+        rc_right = f"{read.reference_name}{get_opposite_orientation(get_read_orientation(read))}"
         add_endpoint_support(endpoint_counts, rc_left, rc_right, target_contigs)
 
 
@@ -271,9 +273,7 @@ def add_component_external_endpoint_sa_tag_support(
         )
 
         rc_left = f"{sa_reference_name}{get_opposite_orientation(sa_orientation)}"
-        rc_right = (
-            f"{read.reference_name}{get_opposite_orientation(get_read_orientation(read))}"
-        )
+        rc_right = f"{read.reference_name}{get_opposite_orientation(get_read_orientation(read))}"
         add_component_external_endpoint_support(
             endpoint_counts, rc_left, rc_right, target_contigs, contig_component_ids
         )

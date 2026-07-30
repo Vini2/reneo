@@ -64,9 +64,7 @@ def build_oriented_component_graph(candidate_nodes, **kwargs):
                 )
 
                 for edge in kwargs["oriented_links"][unitig_name][node]:
-                    cycle_edges[(unitig_name + edge[0], node + edge[1])] = int(
-                        min_cov
-                    )
+                    cycle_edges[(unitig_name + edge[0], node + edge[1])] = int(min_cov)
 
     for cedge in cycle_edges:
         G_edge.add_edge(cedge[0], cedge[1], weight=cycle_edges[cedge])
@@ -84,8 +82,7 @@ def get_case3_linear_terminals(**kwargs):
 
     for component_id, candidate_nodes in kwargs["pruned_vs"].items():
         if not (
-            len(candidate_nodes) > 2
-            and len(candidate_nodes) <= kwargs["compcount"]
+            len(candidate_nodes) > 2 and len(candidate_nodes) <= kwargs["compcount"]
         ):
             continue
 
@@ -294,8 +291,7 @@ def get_unextended_case3_linear_component_terminals(**kwargs):
 
     for component_id, candidate_nodes in kwargs["pruned_vs"].items():
         if not (
-            len(candidate_nodes) > 2
-            and len(candidate_nodes) <= kwargs["compcount"]
+            len(candidate_nodes) > 2 and len(candidate_nodes) <= kwargs["compcount"]
         ):
             continue
 
@@ -378,10 +374,9 @@ def get_unextended_case3_linear_closure_support(component_terminals, **kwargs):
 
     closure_support = {}
     for link, component_id in pair_components.items():
-        support = (
-            oriented_junction_pe_coverage.get(link, 0)
-            + oriented_spanning_read_coverage.get(link, 0)
-        )
+        support = oriented_junction_pe_coverage.get(
+            link, 0
+        ) + oriented_spanning_read_coverage.get(link, 0)
         if support < JUNCTION_PE_THRESHOLD:
             continue
 
@@ -457,9 +452,7 @@ def filter_unextended_case3_linear_components_by_endpoint_support(**kwargs):
         kwargs["comp_vogs"].pop(component_id, None)
 
     kwargs["complete_unextended_case3_linear_components"] = complete_components
-    kwargs[
-        "circularized_unextended_case3_linear_components"
-    ] = circularized_components
+    kwargs["circularized_unextended_case3_linear_components"] = circularized_components
     kwargs["logger"].info(
         f"Kept {len(complete_components)} unextended case 3 linear components with zero external end-linking evidence"
     )
@@ -493,7 +486,9 @@ def add_inferred_oriented_link(left, right, support, **kwargs):
     if (
         left_orientation,
         right_orientation,
-    ) not in kwargs["oriented_links"][left_name][right_name]:
+    ) not in kwargs["oriented_links"][
+        left_name
+    ][right_name]:
         kwargs["oriented_links"][left_name][right_name].append(
             (left_orientation, right_orientation)
         )
@@ -585,10 +580,9 @@ def augment_case3_linear_components_once(round_id, **kwargs):
     observed_links.update(oriented_spanning_read_coverage.keys())
 
     for link in observed_links:
-        support = (
-            oriented_junction_pe_coverage.get(link, 0)
-            + oriented_spanning_read_coverage.get(link, 0)
-        )
+        support = oriented_junction_pe_coverage.get(
+            link, 0
+        ) + oriented_spanning_read_coverage.get(link, 0)
 
         if support < JUNCTION_PE_THRESHOLD or len(link) != 2:
             continue
@@ -623,9 +617,9 @@ def augment_case3_linear_components_once(round_id, **kwargs):
             right_endpoint_type = "case3_source"
             right_component = source_components[right]
 
-        if link_type is not None and support > inferred_links.get(
-            link, {}
-        ).get("support", 0):
+        if link_type is not None and support > inferred_links.get(link, {}).get(
+            "support", 0
+        ):
             inferred_links[link] = {
                 "support": support,
                 "link_type": link_type,

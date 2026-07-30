@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import tempfile
+
 import networkx as nx
 
 from .fd_inexact import SolveInstances

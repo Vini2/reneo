@@ -283,7 +283,7 @@ def SolveInstances(Graphs, max_paths, fp, fc, nthreads):
         listOfEdges = Graphs[s]["list of edges"]
 
         for k in range(0, len(listOfEdges)):
-            (a, b, c, d) = listOfEdges[k]
+            a, b, c, d = listOfEdges[k]
             Edges.add((a, b))
             V.add(a)
             V.add(b)

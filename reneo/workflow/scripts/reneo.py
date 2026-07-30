@@ -14,12 +14,12 @@ import networkx as nx
 from igraph import *
 from reneo_utils import component_utils, edge_graph_utils, flow_utils, gene_utils
 from reneo_utils.coverage_utils import get_unitig_coverage
+from reneo_utils.genome_utils import GenomeComponent, GenomePath
 from reneo_utils.graph_augmentation_utils import (
     add_complete_isolated_linear_unitigs,
     augment_case3_linear_components,
     filter_unextended_case3_linear_components_by_endpoint_support,
 )
-from reneo_utils.genome_utils import GenomeComponent, GenomePath
 from reneo_utils.output_utils import (
     init_files,
     write_augmented_gfa,
@@ -44,6 +44,7 @@ __email__ = "viji.mallawaarachchi@gmail.com"
 __status__ = "Development"
 
 MAX_SOURCE_SINK_CANDIDATES = 5
+
 
 def setup_logging(**kwargs):
 
@@ -101,7 +102,9 @@ def make_oriented_links_picklable(oriented_links):
 
 
 def component_work_items(pruned_vs):
-    return sorted(pruned_vs, key=lambda my_count: len(pruned_vs[my_count]), reverse=True)
+    return sorted(
+        pruned_vs, key=lambda my_count: len(pruned_vs[my_count]), reverse=True
+    )
 
 
 def genome_path_set_sort_key(final_genomic_paths):
@@ -129,7 +132,9 @@ def multiprocessing_context():
     return multiprocessing.get_context("spawn")
 
 
-def worker_resolve_components_process(component_queue, results_queue, log_queue, kwargs):
+def worker_resolve_components_process(
+    component_queue, results_queue, log_queue, kwargs
+):
     kwargs["logger"] = setup_worker_logging(log_queue)
     worker_resolve_components(component_queue, results_queue, **kwargs)
 
@@ -493,7 +498,11 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                         if node in kwargs["unitig_coverages"]:
                             cov_2 = kwargs["unitig_coverages"][node]
 
-                        min_cov = min([cov_1, cov_2]) if min([cov_1, cov_2]) != 0 else max([cov_1, cov_2])
+                        min_cov = (
+                            min([cov_1, cov_2])
+                            if min([cov_1, cov_2]) != 0
+                            else max([cov_1, cov_2])
+                        )
 
                         for edge in kwargs["oriented_links"][unitig_name][node]:
                             cycle_edges[(unitig_name + edge[0], node + edge[1])] = int(
@@ -680,7 +689,12 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                         if junction_cov == 0:
                             network_edges.append(
-                                (u_index, final_vertex, cov_lower_bound, cov_upper_bound)
+                                (
+                                    u_index,
+                                    final_vertex,
+                                    cov_lower_bound,
+                                    cov_upper_bound,
+                                )
                             )
                         else:
                             network_edges.append(
@@ -696,9 +710,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
 
                         # Add subpaths based on junction coverage
                         if junction_cov >= kwargs["mincov"]:
-                            kwargs["logger"].debug(
-                                f"Adding subpath {[u_name, v_name]}"
-                            )
+                            kwargs["logger"].debug(f"Adding subpath {[u_name, v_name]}")
                             subpaths[subpath_count] = [u_index, final_vertex]
                             subpath_count += 1
 
@@ -711,7 +723,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 if (
                                     kwargs["junction_pe_coverage"][
                                         (u_pred[:-1], v[:-1])
-                                    ] > 0
+                                    ]
+                                    > 0
                                     and [u_pred, u, v] not in junctions_visited
                                 ):
                                     u_pred_name = kwargs["unitig_names_rev"][
@@ -738,7 +751,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 if (
                                     kwargs["junction_pe_coverage"][
                                         (u[:-1], v_succ[:-1])
-                                    ] > 0
+                                    ]
+                                    > 0
                                     and [u, v, v_succ] not in junctions_visited
                                 ):
                                     v_succ_name = kwargs["unitig_names_rev"][
@@ -784,13 +798,18 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                     f"Coverage across predecessor - {u_pred}:{u_pred_cov}, {u}:{u_cov}, {v}:{v_cov}"
                                 )
 
-                                left_weight = min(u_pred_cov, u_cov) if u_cov > 0 else max(u_pred_cov, u_cov)
-                                right_weight = min(u_cov, v_cov) if u_cov > 0 else max(u_cov, v_cov)
+                                left_weight = (
+                                    min(u_pred_cov, u_cov)
+                                    if u_cov > 0
+                                    else max(u_pred_cov, u_cov)
+                                )
+                                right_weight = (
+                                    min(u_cov, v_cov)
+                                    if u_cov > 0
+                                    else max(u_cov, v_cov)
+                                )
 
-                                if (
-                                    abs(left_weight - right_weight)
-                                    < kwargs["covtol"]
-                                ):
+                                if abs(left_weight - right_weight) < kwargs["covtol"]:
                                     subpaths[subpath_count] = [
                                         u_pred_index,
                                         u_index,
@@ -826,13 +845,18 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                     f"Coverage across successor - {u}:{u_cov}, {v}:{v_cov}, {v_succ}:{v_succ_cov}"
                                 )
 
-                                left_weight = min(u_cov, v_cov) if v_cov > 0 else max(u_cov, v_cov)
-                                right_weight = min(v_succ_cov, v_cov) if v_cov > 0 else max(v_succ_cov, v_cov)
+                                left_weight = (
+                                    min(u_cov, v_cov)
+                                    if v_cov > 0
+                                    else max(u_cov, v_cov)
+                                )
+                                right_weight = (
+                                    min(v_succ_cov, v_cov)
+                                    if v_cov > 0
+                                    else max(v_succ_cov, v_cov)
+                                )
 
-                                if (
-                                    abs(left_weight - right_weight)
-                                    < kwargs["covtol"]
-                                ):
+                                if abs(left_weight - right_weight) < kwargs["covtol"]:
                                     subpaths[subpath_count] = [
                                         u_index,
                                         final_vertex,
@@ -951,7 +975,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                 total_length += len(trimmed_seq)
 
                                             previous_edge = node
-                                        
+
                                         if total_length > kwargs["minlength"]:
 
                                             # Create GenomePath object with path details
@@ -1022,7 +1046,10 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 )
                 kwargs["logger"].debug(f"Identified candidate sinks: {sink_candidates}")
 
-                if len(source_candidates) <= MAX_SOURCE_SINK_CANDIDATES and len(sink_candidates) <= MAX_SOURCE_SINK_CANDIDATES:
+                if (
+                    len(source_candidates) <= MAX_SOURCE_SINK_CANDIDATES
+                    and len(sink_candidates) <= MAX_SOURCE_SINK_CANDIDATES
+                ):
 
                     source_node_indices = [
                         kwargs["unitig_names_rev"][x[:-1]] for x in source_candidates
@@ -1162,7 +1189,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                     if (
                                         kwargs["junction_pe_coverage"][
                                             (u_pred[:-1], v[:-1])
-                                        ] > 0
+                                        ]
+                                        > 0
                                         and [u_pred, u, v] not in junctions_visited
                                     ):
                                         u_pred_name = kwargs["unitig_names_rev"][
@@ -1191,7 +1219,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                     if (
                                         kwargs["junction_pe_coverage"][
                                             (u[:-1], v_succ[:-1])
-                                        ] > 0
+                                        ]
+                                        > 0
                                         and [u, v, v_succ] not in junctions_visited
                                     ):
                                         v_succ_name = kwargs["unitig_names_rev"][
@@ -1224,12 +1253,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 f"Predecessors of {u}: {[x for x in G_edge.predecessors(u)]}"
                             )
                             for u_pred in G_edge.predecessors(u):
-                                u_pred_name = kwargs["unitig_names_rev"][
-                                    u_pred[:-1]
-                                ]
-                                u_pred_index = (
-                                    candidate_nodes.index(u_pred_name) + 1
-                                )
+                                u_pred_name = kwargs["unitig_names_rev"][u_pred[:-1]]
+                                u_pred_index = candidate_nodes.index(u_pred_name) + 1
                                 u_pred_cov = kwargs["unitig_coverages"][u_pred[:-1]]
                                 u_cov = kwargs["unitig_coverages"][u[:-1]]
                                 v_cov = kwargs["unitig_coverages"][v[:-1]]
@@ -1244,8 +1269,16 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                         f"Coverage across predecessor - {u_pred}:{u_pred_cov}, {u}:{u_cov}, {v}:{v_cov}"
                                     )
 
-                                    left_weight = min(u_pred_cov, u_cov) if u_cov > 0 else max(u_pred_cov, u_cov)
-                                    right_weight = min(u_cov, v_cov) if u_cov > 0 else max(u_cov, v_cov)
+                                    left_weight = (
+                                        min(u_pred_cov, u_cov)
+                                        if u_cov > 0
+                                        else max(u_pred_cov, u_cov)
+                                    )
+                                    right_weight = (
+                                        min(u_cov, v_cov)
+                                        if u_cov > 0
+                                        else max(u_cov, v_cov)
+                                    )
 
                                     if (
                                         abs(left_weight - right_weight)
@@ -1268,12 +1301,8 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                 f"Successors of {v}: {[x for x in G_edge.successors(v)]}"
                             )
                             for v_succ in G_edge.successors(v):
-                                v_succ_name = kwargs["unitig_names_rev"][
-                                    v_succ[:-1]
-                                ]
-                                v_succ_index = (
-                                    candidate_nodes.index(v_succ_name) + 1
-                                )
+                                v_succ_name = kwargs["unitig_names_rev"][v_succ[:-1]]
+                                v_succ_index = candidate_nodes.index(v_succ_name) + 1
                                 v_succ_cov = kwargs["unitig_coverages"][v_succ[:-1]]
                                 v_cov = kwargs["unitig_coverages"][v[:-1]]
                                 u_cov = kwargs["unitig_coverages"][u[:-1]]
@@ -1290,8 +1319,16 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                         f"Coverage across successor - {u}:{u_cov}, {v}:{v_cov}, {v_succ}:{v_succ_cov}"
                                     )
 
-                                    left_weight = min(u_cov, v_cov) if v_cov > 0 else max(u_cov, v_cov)
-                                    right_weight = min(v_succ_cov, v_cov) if v_cov > 0 else max(v_succ_cov, v_cov)
+                                    left_weight = (
+                                        min(u_cov, v_cov)
+                                        if v_cov > 0
+                                        else max(u_cov, v_cov)
+                                    )
+                                    right_weight = (
+                                        min(v_succ_cov, v_cov)
+                                        if v_cov > 0
+                                        else max(v_succ_cov, v_cov)
+                                    )
 
                                     if (
                                         abs(left_weight - right_weight)
@@ -1481,7 +1518,9 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                                                     bubble_case=case_name,
                                                     node_order=[x for x in path_order],
                                                     node_id_order=[
-                                                        kwargs["unitig_names_rev"][x[:-1]]
+                                                        kwargs["unitig_names_rev"][
+                                                            x[:-1]
+                                                        ]
                                                         for x in path_order
                                                     ],
                                                     path=path_string,
@@ -1880,9 +1919,7 @@ def main(**kwargs):
                         failed = ", ".join(
                             f"{p.name}={p.exitcode}" for p in failed_workers
                         )
-                        raise RuntimeError(
-                            f"Component worker process failed: {failed}"
-                        )
+                        raise RuntimeError(f"Component worker process failed: {failed}")
 
             # Wait for workers to finish
             for p in worker_processes:

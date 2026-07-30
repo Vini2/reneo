@@ -50,9 +50,7 @@ def write_augmented_gfa(**kwargs):
         for (left, right), metadata in sorted(
             inferred_links.items(), key=lambda item: (item[1]["round"], item[0])
         ):
-            target.write(
-                f"L\t{left[:-1]}\t{left[-1]}\t{right[:-1]}\t{right[-1]}\t0M"
-            )
+            target.write(f"L\t{left[:-1]}\t{left[-1]}\t{right[:-1]}\t{right[-1]}\t0M")
             target.write(f"\tRC:i:{metadata['support']}")
             target.write(f"\tPE:i:{metadata.get('pe_support', 0)}")
             target.write(f"\tSR:i:{metadata.get('spanning_support', 0)}")

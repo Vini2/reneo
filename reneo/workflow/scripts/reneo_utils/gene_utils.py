@@ -93,7 +93,11 @@ def get_vog_unitigs(vogs, e_value, hmm_score, vogfunctions):
                 evalue = float(strings[4])
                 hmmScore = float(strings[5])
 
-                if evalue < e_value and hmmScore > hmm_score and "hypothetical protein" not in vog_dict[vog_id].lower():
+                if (
+                    evalue < e_value
+                    and hmmScore > hmm_score
+                    and "hypothetical protein" not in vog_dict[vog_id].lower()
+                ):
                     if name not in unitig_vogs:
                         unitig_vogs[name] = set([vog_id])
                     else:

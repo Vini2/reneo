@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 
-"""format_koverage_results.py: Format koverage results.
-
-"""
+"""format_koverage_results.py: Format koverage results."""
 
 import logging
 import os

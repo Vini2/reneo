@@ -4,8 +4,8 @@ import copy
 import logging
 from collections import defaultdict
 
-from Bio import SeqIO
 from agtools.core.unitig_graph import UnitigGraph
+from Bio import SeqIO
 from igraph import *
 
 __author__ = "Vijini Mallawaarachchi"
