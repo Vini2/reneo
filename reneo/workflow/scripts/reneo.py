@@ -43,6 +43,7 @@ __maintainer__ = "Vijini Mallawaarachchi"
 __email__ = "viji.mallawaarachchi@gmail.com"
 __status__ = "Development"
 
+MAX_SOURCE_SINK_CANDIDATES = 5
 
 def setup_logging(**kwargs):
 
@@ -1021,7 +1022,7 @@ def worker_resolve_components(component_queue, results_queue, **kwargs):
                 )
                 kwargs["logger"].debug(f"Identified candidate sinks: {sink_candidates}")
 
-                if len(source_candidates) > 0 and len(sink_candidates) > 0:
+                if len(source_candidates) <= MAX_SOURCE_SINK_CANDIDATES and len(sink_candidates) <= MAX_SOURCE_SINK_CANDIDATES:
 
                     source_node_indices = [
                         kwargs["unitig_names_rev"][x[:-1]] for x in source_candidates
