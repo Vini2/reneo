@@ -56,16 +56,18 @@ def graph_augmentation_utils(monkeypatch):
     fake_component = types.ModuleType("reneo_utils.component_utils")
     fake_component.get_components = lambda **kwargs: (kwargs["pruned_vs"], kwargs["comp_vogs"])
     fake_flow = types.ModuleType("reneo_utils.flow_utils")
-    fake_flow.get_source_sink_linear = lambda graph, self_looped_nodes: (
+    fake_flow.get_source_sink_linear = lambda graph, graph_unitigs, self_looped_nodes: (
         [
             node
             for node in graph.nodes
+            if len(graph_unitigs[node[:-1]]) > 1000
             if len(list(graph.predecessors(node))) == 0
             and len(list(graph.successors(node))) > 0
         ],
         [
             node
             for node in graph.nodes
+            if len(graph_unitigs[node[:-1]]) > 1000
             if len(list(graph.predecessors(node))) > 0
             and len(list(graph.successors(node))) == 0
         ],
@@ -253,6 +255,8 @@ def test_filter_unextended_case3_linear_components_by_endpoint_support(
         },
         self_looped_nodes=set(),
         unitig_coverages={},
+        graph_unitigs={f"edge_{i}": "A" * 1001 for i in range(1, 7)},
+        minlength=50,
         MAX_VAL=999,
         compcount=200,
         inferred_case3_links={},
@@ -265,3 +269,51 @@ def test_filter_unextended_case3_linear_components_by_endpoint_support(
     assert removed == 1
     assert pruned_vs == {6: [3, 4, 5]}
     assert comp_vogs == {6: {"VOG2"}}
+
+
+def test_filter_keeps_unextended_case3_linear_component_with_closure_support(
+    monkeypatch, graph_augmentation_utils
+):
+    endpoint_support = {"edge_1+": 3}
+    junction_support = {("edge_3+", "edge_1+"): 10}
+
+    monkeypatch.setattr(
+        graph_augmentation_utils,
+        "get_component_external_endpoint_read_support",
+        lambda *args, **kwargs: endpoint_support,
+    )
+    monkeypatch.setattr(
+        graph_augmentation_utils,
+        "get_oriented_junction_pe_coverage_for_pairs",
+        lambda *args, **kwargs: junction_support,
+    )
+
+    pruned_vs = {5: [0, 1, 2]}
+    comp_vogs = {5: {"VOG1"}}
+
+    removed = graph_augmentation_utils.filter_unextended_case3_linear_components_by_endpoint_support(
+        pruned_vs=pruned_vs,
+        comp_vogs=comp_vogs,
+        unitig_names={0: "edge_1", 1: "edge_2", 2: "edge_3"},
+        unitig_names_rev={"edge_1": 0, "edge_2": 1, "edge_3": 2},
+        oriented_links={
+            "edge_1": {"edge_2": [("+", "+")]},
+            "edge_2": {"edge_3": [("+", "+")]},
+            "edge_3": {},
+        },
+        self_looped_nodes=set(),
+        unitig_coverages={},
+        graph_unitigs={f"edge_{i}": "A" * 1001 for i in range(1, 4)},
+        minlength=50,
+        MAX_VAL=999,
+        compcount=200,
+        inferred_case3_links={},
+        bampath=".",
+        output=".",
+        nthreads=1,
+        logger=Logger(),
+    )
+
+    assert removed == 0
+    assert pruned_vs == {5: [0, 1, 2]}
+    assert comp_vogs == {5: {"VOG1"}}

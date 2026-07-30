@@ -57,14 +57,28 @@ class DiGraph:
 
 
 def test_get_source_sink_linear_excludes_self_looped_unitigs(flow_utils):
-    graph = DiGraph([("edge_1+", "edge_2+"), ("edge_3+", "edge_3-")])
-
-    sources, sinks = flow_utils.get_source_sink_linear(
-        graph, self_looped_nodes={"edge_3"}
+    graph = DiGraph(
+        [
+            ("edge_1+", "edge_2+"),
+            ("edge_3+", "edge_3-"),
+            ("edge_4+", "edge_5+"),
+        ]
     )
 
-    assert sources == ["edge_1+"]
-    assert sinks == ["edge_2+"]
+    sources, sinks = flow_utils.get_source_sink_linear(
+        graph,
+        graph_unitigs={
+            "edge_1": "A" * 100,
+            "edge_2": "A" * 100,
+            "edge_3": "A" * 100,
+            "edge_4": "A" * 1001,
+            "edge_5": "A" * 1001,
+        },
+        self_looped_nodes={"edge_3"},
+    )
+
+    assert sources == ["edge_4+"]
+    assert sinks == ["edge_5+"]
 
 
 def test_get_source_sink_circular_finds_node_that_returns_to_start(flow_utils):
@@ -72,8 +86,7 @@ def test_get_source_sink_circular_finds_node_that_returns_to_start(flow_utils):
 
     candidates = flow_utils.get_source_sink_circular(
         graph,
-        graph_unitigs={"edge_1": "A" * 100, "edge_2": "A" * 100},
-        minlength=50,
+        graph_unitigs={"edge_1": "A" * 1001, "edge_2": "A" * 1001},
         self_looped_nodes=set(),
     )
 
